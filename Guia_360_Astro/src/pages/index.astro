@@ -1,0 +1,67 @@
+---
+import Layout from '../layouts/Layout.astro';
+import styles from '../styles/index.module.css';
+import { noticiasMock, empresasMock, categoriasMock } from '../lib/data';
+import PostCard from '../components/PostCard/PostCard';
+import CompanyCard from '../components/CompanyCard/CompanyCard';
+import { Car, Smile, ShoppingBag, Armchair, Utensils, Home as HomeIcon, Shirt, Dog } from 'lucide-react';
+
+const IconMap: Record<string, any> = {
+  Car, Smile, ShoppingBag, Armchair, Utensils, Home: HomeIcon, Shirt, Dog
+};
+---
+
+<Layout>
+  <main className={styles.main}>
+    <section className={styles.hero}>
+      <div className="container">
+        <h1 className={styles.title}>Explore a sua cidade!</h1>
+        <div className={styles.searchBox}>
+          <input 
+            type="text" 
+            placeholder="O que você está procurando?" 
+            className={styles.searchInput}
+          />
+          <button className="btn-theme">Buscar</button>
+        </div>
+
+        <div className={styles.categoriesWrapper}>
+          {categoriasMock.map(cat => {
+            const Icon = cat.icone ? IconMap[cat.icone] : null;
+            return (
+              <a href={`/empresas?categoria=${cat.slug}`} className={styles.categoryButton}>
+                <div className={styles.categoryIconBox} style={{ backgroundColor: cat.cor || 'var(--primary-color)' }}>
+                  {Icon && <Icon size={32} strokeWidth={1.5} />}
+                </div>
+                <span className={styles.categoryLabel}>{cat.nome}</span>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+
+    <section className={`${styles.content} container`}>
+      <div style={{ marginBottom: '40px' }}>
+        <h2 style={{ marginBottom: '20px' }}>Notícias e Eventos em Destaque</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+          {noticiasMock.map((noticia) => (
+            <PostCard key={noticia.id} noticia={noticia} client:load />
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '40px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2>Guia Comercial: Empresas em Destaque</h2>
+          <a href="/guia-comercial" style={{ color: 'var(--primary-color)', fontWeight: '600' }}>Ver todas &rarr;</a>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+          {empresasMock.map((empresa) => (
+            <CompanyCard key={empresa.id} empresa={empresa} client:load />
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>

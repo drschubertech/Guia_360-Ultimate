@@ -1,0 +1,131 @@
+.header {
+  background-color: var(--bg-light);
+  border-bottom: 1px solid #eaeaea;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topBar {
+  background-color: var(--bg-offwhite);
+  padding: 5px 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid #eaeaea;
+}
+
+.topBarContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mainHeader {
+  padding: 15px 0;
+  position: relative;
+}
+
+.mainHeaderContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.menuButton {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  z-index: 101;
+}
+
+.nav {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.navLink {
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: color 0.3s;
+}
+
+.navLink:hover {
+  color: var(--primary-color);
+}
+
+.desktopActions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.mobileActions {
+  display: none;
+}
+
+.loginBtn {
+  background: none;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.loginBtn:hover {
+  color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+  .topBar {
+    display: none; /* Esconder topbar no mobile para focar no conteúdo principal */
+  }
+
+  .menuButton {
+    display: block;
+  }
+
+  .nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 250px;
+    height: 100vh;
+    background-color: var(--bg-light);
+    flex-direction: column;
+    padding-top: 80px;
+    gap: 30px;
+    transition: right 0.3s ease-in-out;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    z-index: 100;
+  }
+
+  .navOpen {
+    right: 0;
+  }
+
+  .desktopActions {
+    display: none;
+  }
+
+  .mobileActions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    width: 100%;
+    padding: 0 20px;
+  }
+}
