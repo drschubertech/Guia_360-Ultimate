@@ -38,7 +38,14 @@ export default function CadastroEmpresa() {
     uf: ''
   });
   
+  // Redes Sociais
+  const [site, setSite] = useState('');
+  const [instagram, setInstagram] = useState('');
+  const [facebook, setFacebook] = useState('');
+
   // Imagens
+  const [fotoLogo, setFotoLogo] = useState<File | null>(null);
+  const [fotoLogoUrl, setFotoLogoUrl] = useState('');
   const [fotoCapa, setFotoCapa] = useState<File | null>(null);
   const [fotoCapaUrl, setFotoCapaUrl] = useState('');
   const [fotosCatalogo, setFotosCatalogo] = useState<(File|null)>([null, null, null, null]);
@@ -123,10 +130,15 @@ export default function CadastroEmpresa() {
     setUploading(true);
     const slug = nomeEntidade.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     
+    let finalLogoUrl = fotoLogoUrl;
     let finalCapaUrl = fotoCapaUrl;
     let finalCatalogoUrls = [...fotosCatalogoUrl];
     
     try {
+      if (fotoLogo) {
+        finalLogoUrl = await uploadImage(fotoLogo, `empresas/${slug}/logo`);
+      }
+      
       if (fotoCapa) {
         finalCapaUrl = await uploadImage(fotoCapa, `empresas/${slug}/capa`);
       }
@@ -165,6 +177,11 @@ export default function CadastroEmpresa() {
         telefone: whatsapp,
         endereco: `${endereco.rua}, ${endereco.numero} - ${endereco.bairro}`,
         status: 'fechado',
+        logo: finalLogoUrl,
+        site,
+        instagram,
+        facebook,
+        reivindicada: true,
         capa: finalCapaUrl || `https://via.placeholder.com/1200x400?text=${encodeURIComponent(nomeEntidade || 'Empresa')}`,
         fotos_catalogo,
         tipo
@@ -185,6 +202,29 @@ export default function CadastroEmpresa() {
 
   return (
     <main style={{ padding: '60px 20px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 200px)' }}>
+      <style>{`
+        .grid-2-col {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+        }
+        .grid-cep {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        .grid-cep-full {
+          grid-column: 1 / -1;
+        }
+        @media (max-width: 768px) {
+          .grid-2-col, .grid-cep {
+            grid-template-columns: 1fr !important;
+          }
+          .grid-cep-full {
+            grid-column: 1 / -1 !important;
+          }
+        }
+      `}</style>
       <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-md)', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', maxWidth: '600px' }}>
         
         <h1 style={{ textAlign: 'center', marginBottom: '10px', color: 'var(--primary-color)' }}>Anuncie Grátis</h1>
@@ -242,7 +282,7 @@ export default function CadastroEmpresa() {
                   style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div className="grid-2-col">
                 <div>
                   <label style={{ display: 'block', marginBottom: '5px' }}>Categoria</label>
                   <select value={categoria} onChange={(e) => { setCategoria(e.target.value); setSubCategoria(''); }} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }}>
@@ -287,8 +327,8 @@ export default function CadastroEmpresa() {
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold' }}>Endereço Detalhado</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div style={{ gridColumn: '1 / -1' }}>
+                <div className="grid-cep">
+                  <div className="grid-cep-full">
                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>CEP</label>
                     <input 
                       type="text" 
@@ -298,7 +338,7 @@ export default function CadastroEmpresa() {
                       style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
                     />
                   </div>
-                  <div style={{ gridColumn: '1 / -1' }}>
+                  <div className="grid-cep-full">
                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>Rua</label>
                     <input type="text" name="rua" value={endereco.rua} onChange={handleChangeEndereco} placeholder="Nome da rua" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
                   </div>
@@ -320,6 +360,26 @@ export default function CadastroEmpresa() {
                   </div>
                 </div>
               </div>
+              
+              <div style={{ marginTop: '10px' }}>
+                <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold' }}>Presença Online</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>Site</label>
+                    <input type="text" value={site} onChange={(e) => setSite(e.target.value)} placeholder="www.suaempresa.com.br" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                  </div>
+                  <div className="grid-2-col">
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>Instagram</label>
+                      <input type="text" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@seuinstagram" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>Facebook</label>
+                      <input type="text" value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="Link ou usuário" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -327,9 +387,23 @@ export default function CadastroEmpresa() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
               <h3>Etapa 3: Galeria de Fotos</h3>
               <p style={{ color: 'var(--text-secondary)' }}>
-                Adicione a foto de capa (banner principal) e até 4 fotos para o catálogo.
+                Adicione a sua Logo, Foto de capa (banner principal) e até 4 fotos para o catálogo.
               </p>
               
+              <div style={{ padding: '20px', border: '1px solid #eaeaea', borderRadius: 'var(--radius-md)' }}>
+                <h4 style={{ marginBottom: '15px' }}>Logo</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <label style={{ display: 'block', fontSize: '0.9rem' }}>URL da Imagem</label>
+                  <input type="text" value={fotoLogoUrl} onChange={(e) => setFotoLogoUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                  
+                  <div style={{ margin: '10px 0', textAlign: 'center', fontWeight: 'bold' }}>OU</div>
+                  
+                  <label style={{ display: 'block', fontSize: '0.9rem' }}>Enviar do Dispositivo</label>
+                  <input type="file" accept="image/*" onChange={(e) => { if (e.target.files && e.target.files[0]) setFotoLogo(e.target.files[0]) }} style={{ width: '100%', padding: '10px', border: '1px dashed #ccc', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }} />
+                  {fotoLogo && <span style={{ fontSize: '0.8rem', color: 'green' }}>Arquivo selecionado: {fotoLogo.name}</span>}
+                </div>
+              </div>
+
               <div style={{ padding: '20px', border: '1px solid #eaeaea', borderRadius: 'var(--radius-md)' }}>
                 <h4 style={{ marginBottom: '15px' }}>Foto de Capa</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -347,7 +421,7 @@ export default function CadastroEmpresa() {
               <div style={{ padding: '20px', border: '1px solid #eaeaea', borderRadius: 'var(--radius-md)' }}>
                 <h4 style={{ marginBottom: '15px' }}>Fotos do Catálogo (Máx. 4)</h4>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <div className="grid-2-col">
                   {[0, 1, 2, 3].map((index) => (
                     <div key={index} style={{ border: '1px solid #eee', padding: '15px', borderRadius: '8px' }}>
                       <p style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '10px' }}>Foto {index + 1}</p>

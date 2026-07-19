@@ -53,6 +53,43 @@ export default function GuiaComercial() {
 
   return (
     <main>
+      <style>{`
+        .guia-layout {
+          display: flex;
+          gap: 30px;
+          align-items: flex-start;
+        }
+        .guia-sidebar {
+          width: 250px;
+          flex-shrink: 0;
+          background-color: var(--bg-light);
+          padding: 20px;
+          border-radius: var(--radius-md);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .guia-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+          .guia-layout {
+            flex-direction: column;
+          }
+          .guia-sidebar {
+            width: 100%;
+          }
+          .guia-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+          }
+          .guia-header select {
+            width: 100%;
+          }
+        }
+      `}</style>
       <section style={{ backgroundColor: 'var(--bg-dark)', color: 'var(--bg-light)', padding: '60px 20px', textAlign: 'center' }}>
         <div className="container">
           <h1 style={{ fontSize: '2rem', marginBottom: '20px' }}>
@@ -73,10 +110,10 @@ export default function GuiaComercial() {
       </section>
 
       <section className="container" style={{ padding: '40px 0' }}>
-        <div style={{ display: 'flex', gap: '30px', alignItems: 'flex-start' }}>
+        <div className="guia-layout">
           
           {/* Sidebar de Filtros */}
-          <aside style={{ width: '250px', flexShrink: 0, backgroundColor: 'var(--bg-light)', padding: '20px', borderRadius: 'var(--radius-md)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+          <aside className="guia-sidebar">
             <h3 style={{ marginBottom: '15px', color: 'var(--primary-color)' }}>Categorias</h3>
             <ul style={{ listStyle: 'none', padding: 0 }}>
               <li style={{ marginBottom: '10px' }}>
@@ -102,10 +139,10 @@ export default function GuiaComercial() {
           </aside>
 
           {/* Listagem de Empresas */}
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ flex: 1, width: '100%' }}>
+            <div className="guia-header">
               <h2>Resultados ({empresasFiltradas.length})</h2>
-              <select style={{ padding: '8px', borderRadius: 'var(--radius-sm)', border: '1px solid #ccc' }}>
+              <select style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid #ccc' }}>
                 <option>Relevância</option>
                 <option>Melhor Avaliação</option>
                 <option>Mais Recentes</option>

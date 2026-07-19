@@ -43,34 +43,7 @@ export const categoriasMock: Categoria[] = [
   { id: '8', nome: 'Pet Shop', slug: 'pet-shop', cor: '#1dd195', icone: 'Dog' }
 ];
 
-export const empresasMock: Empresa[] = [
-  {
-    id: 'emp-1',
-    nome: 'Clínica Sorriso Feliz',
-    slug: 'clinica-sorriso-feliz',
-    categoria: 'Saúde e Beleza',
-    tags: ['Odontologia', 'Ortodontia'],
-    descricao: 'A melhor clínica odontológica da região.',
-    avaliacao: 4.8,
-    telefone: '(11) 99999-9999',
-    endereco: 'Rua das Flores, 123 - Centro',
-    status: 'aberto',
-    capa: 'https://via.placeholder.com/400x200?text=Clinica+Sorriso'
-  },
-  {
-    id: 'emp-2',
-    nome: 'Pizzaria do Mário',
-    slug: 'pizzaria-do-mario',
-    categoria: 'Alimentação',
-    tags: ['Pizza', 'Delivery'],
-    descricao: 'Pizzas artesanais assadas no forno a lenha.',
-    avaliacao: 4.5,
-    telefone: '(11) 88888-8888',
-    endereco: 'Av. Brasil, 456 - Bairro Alto',
-    status: 'fechado',
-    capa: 'https://via.placeholder.com/400x200?text=Pizzaria+do+Mario'
-  }
-];
+export const empresasMock: Empresa[] = [];
 
 export const noticiasMock: Noticia[] = [
   {

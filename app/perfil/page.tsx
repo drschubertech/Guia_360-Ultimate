@@ -99,9 +99,44 @@ export default function Perfil() {
 
   return (
     <main style={{ padding: '60px 20px', backgroundColor: 'var(--bg-offwhite)', minHeight: 'calc(100vh - 200px)' }}>
+      <style>{`
+        .perfil-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+        }
+        .perfil-header {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          margin-bottom: 40px;
+          padding-bottom: 30px;
+          border-bottom: 1px solid #eaeaea;
+        }
+        .perfil-title {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 30px;
+        }
+        @media (max-width: 768px) {
+          .perfil-grid {
+            grid-template-columns: 1fr;
+          }
+          .perfil-header {
+            flex-direction: column;
+            text-align: center;
+          }
+          .perfil-title {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+          }
+        }
+      `}</style>
       <div className="container" style={{ maxWidth: '800px' }}>
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+        <div className="perfil-title">
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary-color)' }}>
             <User size={32} /> Meu Perfil
           </h1>
@@ -111,7 +146,7 @@ export default function Perfil() {
         </div>
 
         <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-md)', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '40px', paddingBottom: '30px', borderBottom: '1px solid #eaeaea' }}>
+          <div className="perfil-header">
             <div style={{ position: 'relative' }}>
               <div style={{ width: '100px', height: '100px', backgroundColor: 'var(--primary-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '2.5rem', fontWeight: 'bold', overflow: 'hidden' }}>
                 {avatarUrl ? (
@@ -145,7 +180,7 @@ export default function Perfil() {
           <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <h3>Informações Pessoais</h3>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div className="perfil-grid">
               <div>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500, fontSize: '0.9rem' }}>Nome Completo</label>
                 <input 
