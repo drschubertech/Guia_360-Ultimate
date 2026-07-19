@@ -1,11 +1,41 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function Login() {
   const [activeTab, setActiveTab] = useState<'cidadao' | 'empresa'>('cidadao');
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      router.push('/');
+    } catch (error: any) {
+      setErrorMsg(error.message || 'Erro ao realizar o login. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main style={{ padding: '60px 20px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 200px)' }}>
@@ -48,10 +78,22 @@ export default function Login() {
         </div>
 
         {/* Formulário */}
-        <form style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        {errorMsg && (
+          <div style={{ backgroundColor: '#fee2e2', color: '#ef4444', padding: '10px', borderRadius: '5px', marginBottom: '15px', textAlign: 'center' }}>
+            {errorMsg}
+          </div>
+        )}
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500, fontSize: '0.9rem' }}>E-mail</label>
-            <input type="email" placeholder="seu@email.com" style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+            <input 
+              type="email" 
+              placeholder="seu@email.com" 
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+            />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500, fontSize: '0.9rem' }}>Senha</label>
@@ -59,6 +101,9 @@ export default function Login() {
               <input 
                 type={showPassword ? "text" : "password"} 
                 placeholder="••••••••" 
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
               />
               <button 
@@ -75,7 +120,14 @@ export default function Login() {
             <a href="#" style={{ fontSize: '0.8rem', color: 'var(--primary-color)' }}>Esqueci minha senha</a>
           </div>
 
-          <button type="button" className="btn-theme" style={{ marginTop: '10px', padding: '12px' }}>Entrar</button>
+          <button 
+            type="submit" 
+            className="btn-theme" 
+            style={{ marginTop: '10px', padding: '12px', opacity: loading ? 0.7 : 1 }}
+            disabled={loading}
+          >
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
         </form>
 
         <div style={{ marginTop: '25px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>

@@ -1,28 +1,32 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
-const categorias = {
-  Empresa: {
-    "Alimentação": ["Restaurante", "Pizzaria", "Lanchonete", "Cafeteria"],
-    "Saúde e Beleza": ["Salão de Beleza", "Clínica Médica", "Barbearia", "Academia"],
-    "Comércio": ["Supermercado", "Loja de Roupas", "Eletrônicos"],
-    "Serviços": ["Mecânica", "Assistência Técnica", "Limpeza"]
-  },
-  Entidade: {
-    "Entidades Sociais": ["ONG", "Associação de Moradores", "Sindicato"],
-    "Entidades Públicas": ["Posto de Saúde", "Prefeitura", "Secretaria", "Escola Pública"],
-    "Religioso": ["Igreja", "Templo", "Centro Espírita"]
-  }
-};
+// Categorias e Subcategorias agora vêm do Supabase
 
 export default function CadastroEmpresa() {
   const [etapa, setEtapa] = useState(1);
   const [tipo, setTipo] = useState<'Empresa' | 'Entidade'>('Empresa');
+  const [nomeEntidade, setNomeEntidade] = useState('');
   const [categoria, setCategoria] = useState('');
   const [subCategoria, setSubCategoria] = useState('');
+  
+  const [categoriasDb, setCategoriasDb] = useState<any[]>([]);
+  const [subcategoriasDb, setSubcategoriasDb] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadCategorias() {
+      const { data: catData } = await supabase.from('categorias').select('*');
+      if (catData) setCategoriasDb(catData);
+      
+      const { data: subData } = await supabase.from('subcategorias').select('*');
+      if (subData) setSubcategoriasDb(subData);
+    }
+    loadCategorias();
+  }, []);
   const [whatsapp, setWhatsapp] = useState('');
   const [cep, setCep] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,6 +37,19 @@ export default function CadastroEmpresa() {
     cidade: '',
     uf: ''
   });
+  
+  // Imagens
+  const [fotoCapa, setFotoCapa] = useState<File | null>(null);
+  const [fotoCapaUrl, setFotoCapaUrl] = useState('');
+  const [fotosCatalogo, setFotosCatalogo] = useState<(File|null)>([null, null, null, null]);
+  const [fotosCatalogoUrl, setFotosCatalogoUrl] = useState<string[]>(['', '', '', '']);
+  const [uploading, setUploading] = useState(false);
+
+  // Conta de Acesso
+  const [nomeAdmin, setNomeAdmin] = useState('');
+  const [emailAdmin, setEmailAdmin] = useState('');
+  const [senhaAdmin, setSenhaAdmin] = useState('');
+
   const router = useRouter();
 
   const handleWhatsapp = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,9 +102,85 @@ export default function CadastroEmpresa() {
     setEndereco(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleConcluir = () => {
-    alert('Cadastro enviado para aprovação!');
-    router.push('/empresa/nova-empresa');
+  const uploadImage = async (file: File, path: string) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${path}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('imagens')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data } = supabase.storage.from('imagens').getPublicUrl(filePath);
+    return data.publicUrl;
+  };
+
+  const handleConcluir = async () => {
+    setUploading(true);
+    const slug = nomeEntidade.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    
+    let finalCapaUrl = fotoCapaUrl;
+    let finalCatalogoUrls = [...fotosCatalogoUrl];
+    
+    try {
+      if (fotoCapa) {
+        finalCapaUrl = await uploadImage(fotoCapa, `empresas/${slug}/capa`);
+      }
+      
+      for (let i = 0; i < 4; i++) {
+        if (fotosCatalogo[i]) {
+          const url = await uploadImage(fotosCatalogo[i]!, `empresas/${slug}/catalogo`);
+          finalCatalogoUrls[i] = url;
+        }
+      }
+      
+      const fotos_catalogo = finalCatalogoUrls.filter(url => url !== '');
+
+      // 1. Criar a conta do usuário no Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: emailAdmin,
+        password: senhaAdmin,
+        options: {
+          data: {
+            nome: nomeAdmin,
+            telefone: whatsapp,
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      // 2. Inserir a empresa
+      const novaEmpresa = {
+        nome: nomeEntidade || 'Empresa Sem Nome',
+        slug,
+        categoria: categoria || 'Serviços',
+        tags: [],
+        descricao: 'Descrição pendente.',
+        avaliacao: 0,
+        telefone: whatsapp,
+        endereco: `${endereco.rua}, ${endereco.numero} - ${endereco.bairro}`,
+        status: 'fechado',
+        capa: finalCapaUrl || `https://via.placeholder.com/1200x400?text=${encodeURIComponent(nomeEntidade || 'Empresa')}`,
+        fotos_catalogo,
+        tipo
+      };
+
+      const { error } = await supabase.from('empresas').insert([novaEmpresa]);
+      if (error) throw error;
+      
+      alert('Cadastro enviado com sucesso para o banco de dados!');
+      router.push('/');
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao cadastrar no banco: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -141,15 +234,21 @@ export default function CadastroEmpresa() {
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Nome da {tipo}</label>
-                <input type="text" placeholder={`Ex: ${tipo === 'Empresa' ? 'Pizzaria do Mário' : 'Associação Bairro X'}`} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                <input 
+                  type="text" 
+                  value={nomeEntidade}
+                  onChange={(e) => setNomeEntidade(e.target.value)}
+                  placeholder={`Ex: ${tipo === 'Empresa' ? 'Pizzaria do Mário' : 'Associação Bairro X'}`} 
+                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+                />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '5px' }}>Categoria</label>
                   <select value={categoria} onChange={(e) => { setCategoria(e.target.value); setSubCategoria(''); }} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }}>
                     <option value="">Selecione...</option>
-                    {Object.keys(categorias[tipo]).map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
+                    {categoriasDb.filter(c => c.tipo === tipo).map(cat => (
+                      <option key={cat.id} value={cat.nome}>{cat.nome}</option>
                     ))}
                   </select>
                 </div>
@@ -158,8 +257,13 @@ export default function CadastroEmpresa() {
                     <label style={{ display: 'block', marginBottom: '5px' }}>Sub-categoria</label>
                     <select value={subCategoria} onChange={(e) => setSubCategoria(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }}>
                       <option value="">Selecione...</option>
-                      {(categorias[tipo] as Record<string, string[]>)[categoria]?.map(sub => (
-                        <option key={sub} value={sub}>{sub}</option>
+                      {subcategoriasDb
+                        .filter(s => {
+                          const catSelecionada = categoriasDb.find(c => c.nome === categoria && c.tipo === tipo);
+                          return catSelecionada && s.categoria_id === catSelecionada.id;
+                        })
+                        .map(sub => (
+                          <option key={sub.id} value={sub.nome}>{sub.nome}</option>
                       ))}
                     </select>
                   </div>
@@ -220,11 +324,52 @@ export default function CadastroEmpresa() {
           )}
 
           {etapa === 3 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <h3>Etapa 3: Horário e Galeria</h3>
-              <p style={{ color: 'var(--text-secondary)' }}>Faça upload da logo e fotos do seu negócio (Mock)</p>
-              <div style={{ border: '2px dashed #ccc', padding: '30px', textAlign: 'center', borderRadius: 'var(--radius-sm)' }}>
-                Arraste imagens aqui
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+              <h3>Etapa 3: Galeria de Fotos</h3>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                Adicione a foto de capa (banner principal) e até 4 fotos para o catálogo.
+              </p>
+              
+              <div style={{ padding: '20px', border: '1px solid #eaeaea', borderRadius: 'var(--radius-md)' }}>
+                <h4 style={{ marginBottom: '15px' }}>Foto de Capa</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <label style={{ display: 'block', fontSize: '0.9rem' }}>URL da Imagem (opcional se enviar arquivo)</label>
+                  <input type="text" value={fotoCapaUrl} onChange={(e) => setFotoCapaUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                  
+                  <div style={{ margin: '10px 0', textAlign: 'center', fontWeight: 'bold' }}>OU</div>
+                  
+                  <label style={{ display: 'block', fontSize: '0.9rem' }}>Enviar do Dispositivo</label>
+                  <input type="file" accept="image/*" onChange={(e) => { if (e.target.files && e.target.files[0]) setFotoCapa(e.target.files[0]) }} style={{ width: '100%', padding: '10px', border: '1px dashed #ccc', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }} />
+                  {fotoCapa && <span style={{ fontSize: '0.8rem', color: 'green' }}>Arquivo selecionado: {fotoCapa.name}</span>}
+                </div>
+              </div>
+
+              <div style={{ padding: '20px', border: '1px solid #eaeaea', borderRadius: 'var(--radius-md)' }}>
+                <h4 style={{ marginBottom: '15px' }}>Fotos do Catálogo (Máx. 4)</h4>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  {[0, 1, 2, 3].map((index) => (
+                    <div key={index} style={{ border: '1px solid #eee', padding: '15px', borderRadius: '8px' }}>
+                      <p style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '10px' }}>Foto {index + 1}</p>
+                      
+                      <input type="text" value={fotosCatalogoUrl[index]} onChange={(e) => {
+                        const newUrls = [...fotosCatalogoUrl];
+                        newUrls[index] = e.target.value;
+                        setFotosCatalogoUrl(newUrls);
+                      }} placeholder="URL da imagem" style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)', marginBottom: '10px', fontSize: '0.8rem' }} />
+                      
+                      <input type="file" accept="image/*" onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const newFiles = [...fotosCatalogo] as any[];
+                          newFiles[index] = e.target.files[0];
+                          setFotosCatalogo(newFiles);
+                        }
+                      }} style={{ width: '100%', fontSize: '0.8rem' }} />
+                      
+                      {fotosCatalogo[index] && <span style={{ fontSize: '0.75rem', color: 'green', display: 'block', marginTop: '5px' }}>Selecionado: {fotosCatalogo[index]?.name}</span>}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -235,17 +380,19 @@ export default function CadastroEmpresa() {
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Os dados do administrador da empresa</p>
               <div>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Nome Completo</label>
-                <input type="text" placeholder="Seu nome completo" style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                <input type="text" value={nomeAdmin} onChange={(e) => setNomeAdmin(e.target.value)} placeholder="Seu nome completo" style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '5px' }}>E-mail para Login</label>
-                <input type="email" placeholder="seu@email.com" style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                <input type="email" value={emailAdmin} onChange={(e) => setEmailAdmin(e.target.value)} placeholder="seu@email.com" style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Senha</label>
                 <div style={{ position: 'relative' }}>
                   <input 
                     type={showPassword ? "text" : "password"} 
+                    value={senhaAdmin}
+                    onChange={(e) => setSenhaAdmin(e.target.value)}
                     placeholder="••••••••" 
                     style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
                   />
@@ -281,8 +428,8 @@ export default function CadastroEmpresa() {
               Avançar
             </button>
           ) : (
-            <button className="btn-theme" onClick={handleConcluir}>
-              Concluir Cadastro
+            <button className="btn-theme" onClick={handleConcluir} disabled={uploading}>
+              {uploading ? 'Enviando...' : 'Concluir Cadastro'}
             </button>
           )}
         </div>

@@ -18,6 +18,7 @@ export type Empresa = {
   endereco: string;
   status: 'aberto' | 'fechado';
   capa: string;
+  tipo?: 'Empresa' | 'Entidade';
 };
 
 export type Noticia = {

@@ -16,7 +16,7 @@ export default function CompanyCard({ empresa }: { empresa: Empresa }) {
       
       <div className={styles.content}>
         <div className={styles.category}>{empresa.categoria}</div>
-        <Link href={`/empresa/${empresa.slug}`} className={styles.title}>
+        <Link href={empresa.tipo === 'Entidade' ? `/entidade/${empresa.slug}` : `/empresa/${empresa.slug}`} className={styles.title}>
           {empresa.nome}
         </Link>
         <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{empresa.descricao}</p>

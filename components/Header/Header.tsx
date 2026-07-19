@@ -1,12 +1,40 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Menu, X, User } from 'lucide-react';
 import styles from './Header.module.css';
+import { supabase } from '@/lib/supabase';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Busca a sessão inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Escuta mudanças na autenticação (login, logout)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? { ...session.user } : null);
+    });
+
+    // Escuta atualizações de perfil manuais
+    const handleUserUpdated = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ? { ...session.user } : null);
+    };
+    window.addEventListener('userUpdated', handleUserUpdated);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('userUpdated', handleUserUpdated);
+    };
+  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -39,22 +67,52 @@ export default function Header() {
           <nav className={`${styles.nav} ${isMenuOpen ? styles.navOpen : ''}`}>
             <Link href="/" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Início</Link>
             <Link href="/guia-comercial" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Guia Comercial</Link>
-            <Link href="/empresas" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Empresas</Link>
-            <Link href="/entidades" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Entidades</Link>
+            <Link href="/guia-comercial?tipo=empresas" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Empresas</Link>
+            <Link href="/guia-comercial?tipo=entidades" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Entidades</Link>
             
             <div className={styles.mobileActions}>
-              <Link href="/login" className={styles.loginBtn} onClick={() => setIsMenuOpen(false)}>Entrar</Link>
-              <Link href="/cadastro-empresa" className="btn-theme btn-pill" onClick={() => setIsMenuOpen(false)}>
-                ANUNCIAR GRÁTIS
-              </Link>
+              {user ? (
+                <Link href="/perfil" className={styles.loginBtn} onClick={() => setIsMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px' }}>
+                  <div style={{ width: '24px', height: '24px', backgroundColor: 'var(--primary-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold', overflow: 'hidden' }}>
+                    {user.user_metadata?.avatar_url ? (
+                      <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      user.email?.charAt(0).toUpperCase() || <User size={14} />
+                    )}
+                  </div>
+                  Meu Perfil
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login" className={styles.loginBtn} onClick={() => setIsMenuOpen(false)}>Entrar</Link>
+                  <Link href="/cadastro-empresa" className="btn-theme btn-pill" onClick={() => setIsMenuOpen(false)}>
+                    ANUNCIAR GRÁTIS
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
 
           <div className={styles.desktopActions}>
-            <Link href="/login" className={styles.loginBtn}>Entrar</Link>
-            <Link href="/cadastro-empresa" className="btn-theme btn-pill">
-              ANUNCIAR GRÁTIS
-            </Link>
+            {user ? (
+              <Link href="/perfil" className={styles.loginBtn} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-pill)', border: '1px solid #eaeaea' }}>
+                <div style={{ width: '28px', height: '28px', backgroundColor: 'var(--primary-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.9rem', fontWeight: 'bold', overflow: 'hidden' }}>
+                  {user.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    user.email?.charAt(0).toUpperCase() || <User size={16} />
+                  )}
+                </div>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{user.email?.split('@')[0]}</span>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className={styles.loginBtn}>Entrar</Link>
+                <Link href="/cadastro-empresa" className="btn-theme btn-pill">
+                  ANUNCIAR GRÁTIS
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

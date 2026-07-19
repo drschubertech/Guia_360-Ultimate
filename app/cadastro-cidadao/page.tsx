@@ -3,16 +3,51 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function CadastroCidadao() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Estados do formulário
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  
   const router = useRouter();
 
-  const handleConcluir = (e: React.FormEvent) => {
+  const handleConcluir = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Cadastro realizado com sucesso!');
-    router.push('/login');
+    setErrorMsg('');
+    
+    if (password !== confirmPassword) {
+      setErrorMsg('As senhas não coincidem!');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.from('cidadaos').insert([{
+        nome: fullName,
+        email,
+        bairro: 'Não informado'
+      }]);
+
+      if (error) {
+        throw error;
+      }
+
+      alert('Cadastro realizado com sucesso! Verifique seu e-mail ou faça login.');
+      router.push('/');
+    } catch (error: any) {
+      setErrorMsg(error.message || 'Erro ao realizar o cadastro. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -23,15 +58,35 @@ export default function CadastroCidadao() {
           Preencha seus dados para acessar como cidadão.
         </p>
 
+        {errorMsg && (
+          <div style={{ backgroundColor: '#fee2e2', color: '#ef4444', padding: '10px', borderRadius: '5px', marginBottom: '15px', textAlign: 'center' }}>
+            {errorMsg}
+          </div>
+        )}
+
         {/* Formulário */}
         <form onSubmit={handleConcluir} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500, fontSize: '0.9rem' }}>Nome Completo</label>
-            <input type="text" required placeholder="João da Silva" style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+            <input 
+              type="text" 
+              required 
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="João da Silva" 
+              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+            />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500, fontSize: '0.9rem' }}>E-mail</label>
-            <input type="email" required placeholder="seu@email.com" style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+            <input 
+              type="email" 
+              required 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com" 
+              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+            />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500, fontSize: '0.9rem' }}>Senha</label>
@@ -39,6 +94,8 @@ export default function CadastroCidadao() {
               <input 
                 type={showPassword ? "text" : "password"} 
                 required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••" 
                 style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
               />
@@ -57,6 +114,8 @@ export default function CadastroCidadao() {
               <input 
                 type={showConfirmPassword ? "text" : "password"} 
                 required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••" 
                 style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
               />
@@ -70,7 +129,14 @@ export default function CadastroCidadao() {
             </div>
           </div>
 
-          <button type="submit" className="btn-theme" style={{ marginTop: '10px', padding: '12px' }}>Criar Conta</button>
+          <button 
+            type="submit" 
+            className="btn-theme" 
+            style={{ marginTop: '10px', padding: '12px', opacity: loading ? 0.7 : 1 }}
+            disabled={loading}
+          >
+            {loading ? 'Criando...' : 'Criar Conta'}
+          </button>
         </form>
 
         <div style={{ marginTop: '25px', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
