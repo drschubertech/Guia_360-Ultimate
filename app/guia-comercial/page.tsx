@@ -1,12 +1,12 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { empresasMock, categoriasMock, Empresa } from '../../lib/data';
 import CompanyCard from '../../components/CompanyCard/CompanyCard';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 
-export default function GuiaComercial() {
+function GuiaComercialContent() {
   const searchParams = useSearchParams();
   const categoriaSlug = searchParams.get('categoria');
   const tipoFiltro = searchParams.get('tipo'); // 'empresas' ou 'entidades'
@@ -165,5 +165,13 @@ export default function GuiaComercial() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function GuiaComercial() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <GuiaComercialContent />
+    </Suspense>
   );
 }
