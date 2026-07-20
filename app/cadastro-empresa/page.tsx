@@ -48,7 +48,7 @@ export default function CadastroEmpresa() {
   const [fotoLogoUrl, setFotoLogoUrl] = useState('');
   const [fotoCapa, setFotoCapa] = useState<File | null>(null);
   const [fotoCapaUrl, setFotoCapaUrl] = useState('');
-  const [fotosCatalogo, setFotosCatalogo] = useState<(File|null)>([null, null, null, null]);
+  const [fotosCatalogo, setFotosCatalogo] = useState<(File|null)[]>([null, null, null, null]);
   const [fotosCatalogoUrl, setFotosCatalogoUrl] = useState<string[]>(['', '', '', '']);
   const [uploading, setUploading] = useState(false);
 
