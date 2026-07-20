@@ -8,6 +8,7 @@ export type Categoria = {
 
 export type Empresa = {
   id: string;
+  user_id?: string;
   nome: string;
   slug: string;
   categoria: string;

@@ -165,9 +165,11 @@ export default function CadastroEmpresa() {
       });
 
       if (authError) throw authError;
+      const userId = authData.user?.id;
 
       // 2. Inserir a empresa
       const novaEmpresa = {
+        user_id: userId,
         nome: nomeEntidade || 'Empresa Sem Nome',
         slug,
         categoria: categoria || 'Serviços',

@@ -6,12 +6,12 @@ export default function Footer() {
     <footer className={styles.footer}>
       <div className={`container ${styles.grid}`}>
         <div className={styles.column}>
-          <h3>Guia 1555</h3>
+          <h3>GUIA LOCAL 360º</h3>
           <p>
             O maior portal de conteúdo e guia comercial da região. Encontre empresas, serviços e fique por dentro das notícias e eventos locais.
           </p>
         </div>
-        
+
         <div className={styles.column}>
           <h3>Links Rápidos</h3>
           <ul className={styles.links}>
@@ -21,19 +21,19 @@ export default function Footer() {
             <li><Link href="/cadastro-empresa">Anuncie seu Negócio</Link></li>
           </ul>
         </div>
-        
+
         <div className={styles.column}>
           <h3>Contato</h3>
           <p>Email: contato@guia1555.com</p>
           <p>Telefone: (11) 1234-5678</p>
           <div style={{ marginTop: '15px' }}>
-             <button className="btn-theme btn-pill">Fale Conosco</button>
+            <button className="btn-theme btn-pill">Fale Conosco</button>
           </div>
         </div>
       </div>
-      
+
       <div className={`container ${styles.bottomBar}`}>
-        <p>&copy; {new Date().getFullYear()} Guia Comercial 1555. Todos os direitos reservados.</p>
+        <p>&copy; {new Date().getFullYear()} GUIA LOCAL 360º. Todos os direitos reservados.</p>
       </div>
     </footer>
   );

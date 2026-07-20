@@ -2,19 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import { empresasMock } from '../../../lib/data';
-import { MapPin, Star, Phone, Globe, Clock, Instagram, Facebook } from 'lucide-react';
+import { MapPin, Star, Phone, Globe, Clock, Instagram, Facebook, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 
 export default function PerfilEmpresa({ params }: { params: { slug: string } }) {
   const [empresa, setEmpresa] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     async function carregar() {
       const slug = params.slug;
       
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setUserId(session.user.id);
+        }
         const { data, error } = await supabase.from('empresas').select('*').eq('slug', slug).single();
         if (data && !error) {
           setEmpresa(data);
@@ -56,6 +61,14 @@ export default function PerfilEmpresa({ params }: { params: { slug: string } }) 
       <div style={{ height: '400px', backgroundColor: '#333', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={empresa.capa} alt={empresa.nome} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6, position: 'absolute', top: 0, left: 0 }} />
+        
+        {/* Botão de Editar */}
+        {userId === empresa.user_id && (
+          <Link href={`/empresa/${empresa.slug}/editar`} style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 20, display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#fff', color: '#1a202c', padding: '10px 15px', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', textDecoration: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+            <Edit size={18} /> Editar Página
+          </Link>
+        )}
+
         <h1 className="titulo-empresa" style={{ position: 'relative', zIndex: 10, color: '#fff', textTransform: 'uppercase', textShadow: '2px 2px 8px rgba(0,0,0,0.7)', textAlign: 'center', fontWeight: 900 }}>
           {empresa.nome}
         </h1>
@@ -116,6 +129,21 @@ export default function PerfilEmpresa({ params }: { params: { slug: string } }) 
             <div style={{ display: 'inline-flex', marginLeft: '10px', alignItems: 'center', gap: '5px', backgroundColor: '#f3f4f6', color: '#4b5563', padding: '5px 12px', borderRadius: 'var(--radius-pill)', fontSize: '0.8rem' }}>
               {empresa.categoria}
             </div>
+
+            {/* Caixa de Avaliações (Movida para a Esquerda) */}
+            <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+              <h4 style={{ marginBottom: '10px', color: '#1a202c' }}>Avaliações</h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#f59e0b', marginBottom: '5px' }}>
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <Star size={16} fill="currentColor" />
+                <span style={{ color: '#9ca3af', marginLeft: '5px' }}>—</span>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Sem avaliações ainda.</p>
+            </div>
+
           </div>
 
           {/* Coluna 2: Galeria de Fotos */}
@@ -210,20 +238,6 @@ export default function PerfilEmpresa({ params }: { params: { slug: string } }) 
                   </li>
                 )}
               </ul>
-            </div>
-
-            {/* Caixa de Avaliações */}
-            <div>
-              <h4 style={{ marginBottom: '10px', color: '#1a202c' }}>Avaliações</h4>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#f59e0b', marginBottom: '5px' }}>
-                <Star size={16} fill="currentColor" />
-                <Star size={16} fill="currentColor" />
-                <Star size={16} fill="currentColor" />
-                <Star size={16} fill="currentColor" />
-                <Star size={16} fill="currentColor" />
-                <span style={{ color: '#9ca3af', marginLeft: '5px' }}>—</span>
-              </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Sem avaliações ainda.</p>
             </div>
 
           </div>

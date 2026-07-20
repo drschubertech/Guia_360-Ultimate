@@ -77,10 +77,10 @@ export default function Header() {
                     {user.user_metadata?.avatar_url ? (
                       <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      user.email?.charAt(0).toUpperCase() || <User size={14} />
+                      user.user_metadata?.nome?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || <User size={14} />
                     )}
                   </div>
-                  Meu Perfil
+                  {user.user_metadata?.nome ? user.user_metadata.nome.split(' ')[0] : 'Meu Perfil'}
                 </Link>
               ) : (
                 <>
@@ -100,10 +100,12 @@ export default function Header() {
                   {user.user_metadata?.avatar_url ? (
                     <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    user.email?.charAt(0).toUpperCase() || <User size={16} />
+                    user.user_metadata?.nome?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || <User size={16} />
                   )}
                 </div>
-                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{user.email?.split('@')[0]}</span>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                  {user.user_metadata?.nome ? user.user_metadata.nome.split(' ')[0] : user.email?.split('@')[0]}
+                </span>
               </Link>
             ) : (
               <>

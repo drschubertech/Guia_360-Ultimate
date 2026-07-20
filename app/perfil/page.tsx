@@ -182,7 +182,7 @@ export default function Perfil() {
             
             <div className="perfil-grid">
               <div>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500, fontSize: '0.9rem' }}>Nome Completo</label>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500, fontSize: '0.9rem' }}>Nome de Usuário (Como aparecerá no site)</label>
                 <input 
                   type="text" 
                   value={nome}

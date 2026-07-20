@@ -7,10 +7,10 @@ import PostCard from '../components/PostCard/PostCard';
 import CompanyCard from '../components/CompanyCard/CompanyCard';
 import Link from 'next/link';
 import { supabase } from '../lib/supabase';
-import { Car, Smile, ShoppingBag, Armchair, Utensils, Home as HomeIcon, Shirt, Dog } from 'lucide-react';
+import { Car, Smile, ShoppingBag, Armchair, Utensils, Home as HomeIcon, Shirt, Dog, Bike } from 'lucide-react';
 
 const IconMap: Record<string, React.ElementType> = {
-  Car, Smile, ShoppingBag, Armchair, Utensils, Home: HomeIcon, Shirt, Dog
+  Car, Smile, ShoppingBag, Armchair, Utensils, Home: HomeIcon, Shirt, Dog, Bike, Motorbike: Bike, motorbike: Bike
 };
 
 export default function Home() {
@@ -47,9 +47,9 @@ export default function Home() {
         <div className="container">
           <h1 className={styles.title}>Explore a sua cidade!</h1>
           <div className={styles.searchBox}>
-            <input 
-              type="text" 
-              placeholder="O que você está procurando?" 
+            <input
+              type="text"
+              placeholder="O que você está procurando?"
               className={styles.searchInput}
             />
             <button className="btn-theme">Buscar</button>
@@ -83,7 +83,7 @@ export default function Home() {
 
         <div style={{ marginBottom: '40px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2>Guia Comercial: Empresas e Entidades em Destaque</h2>
+            <h2>Empresas e Entidades em Destaque</h2>
             <Link href="/guia-comercial" style={{ color: 'var(--primary-color)', fontWeight: '600' }}>Ver todas &rarr;</Link>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
