@@ -1,17 +1,19 @@
 .header {
-  background-color: var(--bg-light);
-  border-bottom: 1px solid #eaeaea;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #E4E4E7;
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 .topBar {
-  background-color: var(--bg-offwhite);
-  padding: 5px 0;
+  background-color: var(--primary-color);
+  padding: 6px 0;
   font-size: 0.8rem;
-  color: var(--text-secondary);
-  border-bottom: 1px solid #eaeaea;
+  color: #FFFFFF;
+  font-weight: 500;
 }
 
 .topBarContainer {

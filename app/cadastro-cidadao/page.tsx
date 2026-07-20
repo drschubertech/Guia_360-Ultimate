@@ -31,11 +31,15 @@ export default function CadastroCidadao() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('cidadaos').insert([{
-        nome: fullName,
+      const { data, error } = await supabase.auth.signUp({
         email,
-        bairro: 'Não informado'
-      }]);
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          }
+        }
+      });
 
       if (error) {
         throw error;

@@ -5,40 +5,58 @@
 }
 
 .hero {
-  background-color: var(--bg-dark);
-  color: var(--bg-light);
+  background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-offwhite) 100%);
+  color: var(--text-primary);
   padding: 80px 20px;
   text-align: center;
   position: relative;
+  border-bottom: 1px solid #E4E4E7;
 }
 
 .title {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-size: 3rem;
+  margin-bottom: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.title span {
+  color: var(--primary-color);
 }
 
 .searchBox {
-  max-width: 600px;
+  max-width: 680px;
   margin: 0 auto;
   display: flex;
-  gap: 10px;
+  gap: 12px;
+  background: var(--bg-light);
+  padding: 8px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #E4E4E7;
 }
 
 .searchInput {
   flex: 1;
-  padding: 15px;
+  padding: 16px 20px;
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 1rem;
+  font-size: 1.1rem;
+  font-family: inherit;
+  outline: none;
+  background: transparent;
+}
+
+.searchInput::placeholder {
+  color: #A1A1AA;
 }
 
 .categoriesWrapper {
-  margin-top: 40px;
+  margin-top: 48px;
   display: flex;
   justify-content: center;
-  gap: 15px;
+  gap: 24px;
   flex-wrap: wrap;
 }
 
@@ -46,15 +64,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   text-decoration: none;
-  color: var(--bg-light);
+  color: var(--text-primary);
   width: 100px;
-  transition: transform 0.2s;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .categoryButton:hover {
   transform: translateY(-5px);
+}
+
+.categoryButton:hover .categoryIconBox {
+  box-shadow: 0 8px 16px rgba(255, 90, 31, 0.2);
 }
 
 .categoryIconBox {
@@ -63,41 +85,98 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   color: #fff;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
 }
 
 .categoryLabel {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
   text-align: center;
+  color: var(--text-secondary);
 }
 
 .content {
-  padding: 40px 0;
+  padding: 64px 0;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.sectionLink {
+  color: var(--primary-color);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.sectionLink:hover {
+  text-decoration: underline;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
 }
 
 @media (max-width: 768px) {
+  .hero {
+    padding: 48px 20px;
+  }
+
   .title {
-    font-size: 2rem;
+    font-size: 2.2rem;
   }
   
   .searchBox {
     flex-direction: column;
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+  }
+  
+  .searchInput {
+    background: var(--bg-light);
+    border: 1px solid #E4E4E7;
+    border-radius: var(--radius-md);
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .searchBox button {
+    padding: 16px !important;
+    border-radius: var(--radius-md) !important;
+    margin-top: 8px;
   }
   
   .categoriesWrapper {
     justify-content: flex-start;
     flex-wrap: nowrap;
     overflow-x: auto;
-    padding-bottom: 10px;
+    padding-bottom: 20px;
+    margin-top: 32px;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
   }
   
   .categoriesWrapper::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
   }
 
   .categoryButton {
@@ -106,8 +185,9 @@
   }
   
   .categoryIconBox {
-    width: 60px;
-    height: 60px;
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-sm);
   }
   
   .categoryIconBox svg {
@@ -116,6 +196,10 @@
   }
   
   .categoryLabel {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.5rem;
   }
 }

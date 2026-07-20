@@ -9,6 +9,7 @@ export default function Perfil() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   // Dados do formulário
   const [nome, setNome] = useState('');
@@ -35,6 +36,17 @@ export default function Perfil() {
         setTelefone(session.user.user_metadata.telefone || '');
         setEndereco(session.user.user_metadata.endereco || '');
         setAvatarUrl(session.user.user_metadata.avatar_url || '');
+      }
+
+      // Checar se é admin
+      try {
+        const { data: profile } = await supabase.from('profiles').select('role_id').eq('id', session.user.id).single();
+        if (profile?.role_id) {
+          const { data: role } = await supabase.from('user_roles').select('name').eq('id', profile.role_id).single();
+          if (role?.name === 'admin') setIsAdmin(true);
+        }
+      } catch (err) {
+        console.error(err);
       }
       
       setLoading(false);
@@ -140,9 +152,16 @@ export default function Perfil() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary-color)' }}>
             <User size={32} /> Meu Perfil
           </h1>
-          <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 'bold' }}>
-            <LogOut size={18} /> Sair
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {isAdmin && (
+              <button onClick={() => router.push('/admin')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 'bold' }}>
+                Painel Admin
+              </button>
+            )}
+            <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 'bold' }}>
+              <LogOut size={18} /> Sair
+            </button>
+          </div>
         </div>
 
         <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-md)', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
