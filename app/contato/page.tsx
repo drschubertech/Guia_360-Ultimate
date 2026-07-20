@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
 
-export default function Contato() {
+function ContatoContent() {
   const searchParams = useSearchParams();
   
   const [nome, setNome] = useState('');
@@ -160,5 +160,13 @@ export default function Contato() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function Contato() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <ContatoContent />
+    </Suspense>
   );
 }
