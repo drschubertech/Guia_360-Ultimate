@@ -1,18 +1,21 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { empresasMock, categoriasMock, Empresa } from '../../lib/data';
 import CompanyCard from '../../components/CompanyCard/CompanyCard';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
+import { Search, X, Filter, Building2, Store, HeartHandshake, ChevronRight, SlidersHorizontal, Loader2, SearchX, Check } from 'lucide-react';
 
 function GuiaComercialContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const categoriaSlug = searchParams.get('categoria');
   const tipoFiltro = searchParams.get('tipo'); // 'empresas' ou 'entidades'
   
   const [empresas, setEmpresas] = useState<any[]>([]);
   const [busca, setBusca] = useState('');
+  const [somenteAbertos, setSomenteAbertos] = useState(false);
 
   useEffect(() => {
     async function carregarEmpresas() {
@@ -39,117 +42,615 @@ function GuiaComercialContent() {
   const empresasFiltradas = empresas.filter(emp => {
     let match = true;
     if (busca) {
-      match = match && emp.nome.toLowerCase().includes(busca.toLowerCase());
+      match = match && (
+        emp.nome.toLowerCase().includes(busca.toLowerCase()) ||
+        (emp.descricao && emp.descricao.toLowerCase().includes(busca.toLowerCase())) ||
+        (emp.categoria && emp.categoria.toLowerCase().includes(busca.toLowerCase()))
+      );
     }
     if (categoriaSlug) {
-      // Comparar slug ou nome. 'categoriaSlug' vem da url
       match = match && emp.categoria.toLowerCase().replace(/[^a-z0-9]+/g, '-') === categoriaSlug;
     }
     if (tipoFiltro) {
-      // Mock original não tem "tipo", mas podemos inferir ou adaptar.
-      // O tipo salvo no localStorage é "Empresa" ou "Entidade"
-      const empTipo = emp.tipo ? emp.tipo.toLowerCase() : 'empresa'; // mock fallback para empresa
+      const empTipo = emp.tipo ? emp.tipo.toLowerCase() : 'empresa';
       if (tipoFiltro === 'entidades') {
         match = match && empTipo === 'entidade';
       } else if (tipoFiltro === 'empresas') {
         match = match && empTipo === 'empresa';
       }
     }
+    if (somenteAbertos) {
+      match = match && emp.status === 'aberto';
+    }
     return match;
   });
 
+  const limparFiltros = () => {
+    setBusca('');
+    setSomenteAbertos(false);
+    router.push('/guia-comercial');
+  };
+
+  const hasFiltrosAtivos = busca || categoriaSlug || tipoFiltro || somenteAbertos;
+
   return (
-    <main>
+    <main className="guia-page">
       <style>{`
+        @keyframes guia-spin { to { transform: rotate(360deg); } }
+        @keyframes guia-fadein {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .guia-page {
+          background-color: var(--bg-offwhite);
+          min-height: 100vh;
+        }
+
+        /* ── Hero / Search Header ── */
+        .guia-hero {
+          background: linear-gradient(135deg, var(--primary-light) 0%, var(--bg-offwhite) 100%);
+          border-bottom: 1px solid var(--border-color);
+          padding: 60px 20px 48px;
+          text-align: center;
+        }
+
+        .guia-hero-inner {
+          max-width: 720px;
+          margin: 0 auto;
+        }
+
+        .guia-hero-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 12px;
+          border-radius: 99px;
+          background-color: var(--bg-light);
+          border: 1px solid var(--border-color);
+          color: var(--primary-color);
+          font-size: 0.8rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 16px;
+        }
+
+        .guia-hero-title {
+          font-size: 2.4rem;
+          font-weight: 800;
+          font-family: var(--font-outfit), sans-serif;
+          color: var(--text-primary);
+          letter-spacing: -0.03em;
+          margin: 0 0 12px;
+          line-height: 1.15;
+        }
+
+        .guia-hero-subtitle {
+          color: var(--text-secondary);
+          font-size: 1.05rem;
+          margin: 0 0 32px;
+        }
+
+        /* ── Search Bar ── */
+        .guia-search-bar {
+          position: relative;
+          display: flex;
+          align-items: center;
+          background: var(--bg-light);
+          border: 1.5px solid var(--border-color);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-md);
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+          padding: 4px;
+        }
+
+        .guia-search-bar:focus-within {
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 4px var(--primary-light), var(--shadow-md);
+        }
+
+        .guia-search-icon {
+          color: var(--text-tertiary);
+          margin-left: 16px;
+          flex-shrink: 0;
+          transition: color 0.2s ease;
+        }
+
+        .guia-search-bar:focus-within .guia-search-icon {
+          color: var(--primary-color);
+        }
+
+        .guia-search-input {
+          flex: 1;
+          padding: 12px 14px;
+          border: none;
+          background: transparent;
+          font-size: 1rem;
+          font-family: inherit;
+          color: var(--text-primary);
+          outline: none;
+        }
+
+        .guia-search-input::placeholder {
+          color: var(--text-tertiary);
+        }
+
+        .guia-search-clear {
+          background: none;
+          border: none;
+          color: var(--text-tertiary);
+          padding: 8px;
+          margin-right: 4px;
+          cursor: pointer;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: color 0.15s ease, background-color 0.15s ease;
+        }
+
+        .guia-search-clear:hover {
+          color: var(--text-primary);
+          background-color: var(--bg-offwhite);
+        }
+
+        /* ── Quick Tabs ── */
+        .guia-type-tabs {
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          margin-top: 24px;
+          flex-wrap: wrap;
+        }
+
+        .guia-type-tab {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          border-radius: 99px;
+          font-size: 0.875rem;
+          font-weight: 600;
+          text-decoration: none;
+          color: var(--text-secondary);
+          background-color: var(--bg-light);
+          border: 1px solid var(--border-color);
+          transition: all 0.2s ease;
+        }
+
+        .guia-type-tab:hover {
+          border-color: var(--primary-color);
+          color: var(--primary-color);
+        }
+
+        .guia-type-tab.active {
+          background-color: var(--primary-color);
+          color: #fff;
+          border-color: var(--primary-color);
+          box-shadow: var(--shadow-sm);
+        }
+
+        /* ── Section Container ── */
+        .guia-content-section {
+          padding: 40px 20px 80px;
+        }
+
         .guia-layout {
           display: flex;
-          gap: 30px;
+          gap: 32px;
           align-items: flex-start;
+          max-width: 1200px;
+          margin: 0 auto;
         }
+
+        /* ── Sidebar ── */
         .guia-sidebar {
-          width: 250px;
+          width: 260px;
           flex-shrink: 0;
           background-color: var(--bg-light);
-          padding: 20px;
-          border-radius: var(--radius-md);
-          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          padding: 24px;
+          border-radius: var(--radius-lg);
+          border: 1px solid var(--border-color);
+          box-shadow: var(--shadow-sm);
         }
+
+        .guia-sidebar-title {
+          font-size: 0.95rem;
+          font-weight: 700;
+          font-family: var(--font-outfit), sans-serif;
+          color: var(--text-primary);
+          margin: 0 0 16px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        .guia-sidebar-title-icon {
+          color: var(--primary-color);
+        }
+
+        .guia-cat-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .guia-cat-item {
+          margin: 0;
+        }
+
+        .guia-cat-link {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 9px 12px;
+          border-radius: var(--radius-sm);
+          color: var(--text-secondary);
+          font-size: 0.875rem;
+          font-weight: 500;
+          text-decoration: none;
+          transition: all 0.15s ease;
+        }
+
+        .guia-cat-link:hover {
+          background-color: var(--bg-offwhite);
+          color: var(--primary-color);
+        }
+
+        .guia-cat-link.active {
+          background-color: var(--primary-light);
+          color: var(--primary-color);
+          font-weight: 700;
+        }
+
+        .guia-cat-arrow {
+          opacity: 0;
+          transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        .guia-cat-link:hover .guia-cat-arrow,
+        .guia-cat-link.active .guia-cat-arrow {
+          opacity: 1;
+          transform: translateX(2px);
+        }
+
+        .guia-divider {
+          margin: 20px 0;
+          border: none;
+          border-top: 1px solid var(--border-color);
+        }
+
+        .guia-checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: var(--text-primary);
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+          user-select: none;
+        }
+
+        .guia-checkbox {
+          width: 18px;
+          height: 18px;
+          accent-color: var(--primary-color);
+          cursor: pointer;
+        }
+
+        .guia-clear-btn {
+          margin-top: 20px;
+          width: 100%;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 8px 12px;
+          background: transparent;
+          border: 1.5px dashed var(--border-color);
+          border-radius: var(--radius-sm);
+          color: var(--text-secondary);
+          font-size: 0.8rem;
+          font-weight: 600;
+          font-family: inherit;
+          cursor: pointer;
+          transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .guia-clear-btn:hover {
+          border-color: #ef4444;
+          color: #ef4444;
+          background-color: #fef2f2;
+        }
+
+        /* ── Main Results Area ── */
+        .guia-main {
+          flex: 1;
+          width: 100%;
+          min-width: 0;
+        }
+
         .guia-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 20px;
+          margin-bottom: 24px;
+          gap: 16px;
+          flex-wrap: wrap;
         }
-        @media (max-width: 768px) {
+
+        .guia-results-title {
+          font-family: var(--font-outfit), sans-serif;
+          font-weight: 700;
+          font-size: 1.25rem;
+          color: var(--text-primary);
+          margin: 0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .guia-results-count {
+          background-color: var(--primary-light);
+          color: var(--primary-color);
+          padding: 2px 10px;
+          border-radius: 99px;
+          font-size: 0.8rem;
+          font-weight: 700;
+        }
+
+        .guia-select {
+          padding: 9px 14px;
+          border-radius: var(--radius-sm);
+          border: 1.5px solid var(--border-color);
+          color: var(--text-primary);
+          outline: none;
+          background: var(--bg-light);
+          font-family: inherit;
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .guia-select:focus {
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        /* ── Grid ── */
+        .guia-cards-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 24px;
+          animation: guia-fadein 0.3s ease-out;
+        }
+
+        /* ── Empty State ── */
+        .guia-empty-state {
+          background-color: var(--bg-light);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-lg);
+          padding: 60px 24px;
+          text-align: center;
+          box-shadow: var(--shadow-sm);
+          animation: guia-fadein 0.3s ease-out;
+        }
+
+        .guia-empty-icon {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background-color: var(--bg-offwhite);
+          color: var(--text-tertiary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 16px;
+          border: 1px solid var(--border-color);
+        }
+
+        .guia-empty-title {
+          font-size: 1.2rem;
+          font-weight: 700;
+          font-family: var(--font-outfit), sans-serif;
+          color: var(--text-primary);
+          margin: 0 0 8px;
+        }
+
+        .guia-empty-desc {
+          color: var(--text-secondary);
+          font-size: 0.9rem;
+          margin: 0 0 20px;
+          max-width: 400px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .guia-empty-reset-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 20px;
+          background-color: var(--primary-color);
+          color: #fff;
+          border: none;
+          border-radius: var(--radius-sm);
+          font-weight: 700;
+          font-size: 0.875rem;
+          font-family: inherit;
+          cursor: pointer;
+          transition: background-color 0.2s ease, transform 0.15s ease;
+        }
+
+        .guia-empty-reset-btn:hover {
+          background-color: var(--primary-color-hover);
+          transform: translateY(-1px);
+        }
+
+        /* ── Responsividade ── */
+        @media (max-width: 900px) {
           .guia-layout {
             flex-direction: column;
+            gap: 24px;
           }
           .guia-sidebar {
             width: 100%;
           }
+          .guia-hero-title {
+            font-size: 1.8rem;
+          }
+          .guia-hero {
+            padding: 40px 16px 36px;
+          }
+        }
+
+        @media (max-width: 600px) {
           .guia-header {
             flex-direction: column;
             align-items: flex-start;
-            gap: 15px;
+            gap: 12px;
           }
-          .guia-header select {
+          .guia-select {
             width: 100%;
+          }
+          .guia-cards-grid {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
-      <section style={{ background: 'linear-gradient(135deg, var(--primary-light) 0%, var(--bg-offwhite) 100%)', color: 'var(--text-primary)', padding: '80px 20px 60px', textAlign: 'center', borderBottom: '1px solid var(--border-color)' }}>
-        <div className="container">
-          <h1 style={{ fontSize: '2.5rem', marginBottom: '20px', fontFamily: 'var(--font-outfit), sans-serif', fontWeight: 800, letterSpacing: '-0.03em' }}>
+
+      {/* Hero Header */}
+      <section className="guia-hero">
+        <div className="guia-hero-inner">
+          <div className="guia-hero-badge">
+            <Building2 size={14} /> Guia Local
+          </div>
+          <h1 className="guia-hero-title">
             {tipoFiltro === 'entidades' ? 'Guia de Entidades' : tipoFiltro === 'empresas' ? 'Guia de Empresas' : 'Guia Comercial'}
           </h1>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '40px', fontSize: '1.1rem' }}>Encontre os melhores serviços, comércios e entidades da cidade.</p>
+          <p className="guia-hero-subtitle">
+            Encontre os melhores serviços, comércios e entidades da cidade.
+          </p>
           
-          <div style={{ maxWidth: '650px', margin: '0 auto', display: 'flex', gap: '12px', background: 'var(--bg-light)', padding: '8px', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)' }}>
+          {/* Search Bar */}
+          <div className="guia-search-bar">
+            <Search size={20} className="guia-search-icon" />
             <input 
               type="text" 
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Digite o nome da empresa, serviço ou entidade..." 
-              style={{ flex: 1, padding: '12px 20px', border: 'none', background: 'transparent', fontSize: '1.1rem', color: 'var(--text-primary)', outline: 'none' }}
+              className="guia-search-input"
             />
+            {busca && (
+              <button 
+                type="button" 
+                onClick={() => setBusca('')} 
+                className="guia-search-clear"
+                title="Limpar busca"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+
+          {/* Quick Type Filter Tabs */}
+          <div className="guia-type-tabs">
+            <Link 
+              href="/guia-comercial"
+              className={`guia-type-tab ${!tipoFiltro ? 'active' : ''}`}
+            >
+              <Building2 size={15} /> Todos os Locais
+            </Link>
+            <Link 
+              href="/guia-comercial?tipo=empresas"
+              className={`guia-type-tab ${tipoFiltro === 'empresas' ? 'active' : ''}`}
+            >
+              <Store size={15} /> Empresas
+            </Link>
+            <Link 
+              href="/guia-comercial?tipo=entidades"
+              className={`guia-type-tab ${tipoFiltro === 'entidades' ? 'active' : ''}`}
+            >
+              <HeartHandshake size={15} /> Entidades
+            </Link>
           </div>
         </div>
       </section>
 
-      <section className="container" style={{ padding: '40px 0' }}>
+      {/* Main Section */}
+      <section className="guia-content-section">
         <div className="guia-layout">
           
           {/* Sidebar de Filtros */}
           <aside className="guia-sidebar">
-            <h3 style={{ marginBottom: '15px', color: 'var(--primary-color)' }}>Categorias</h3>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              <li style={{ marginBottom: '10px' }}>
-                <Link href={`/guia-comercial`} style={{ color: !categoriaSlug ? 'var(--primary-color)' : 'var(--text-secondary)', fontWeight: !categoriaSlug ? 'bold' : 'normal' }}>
-                  Todas
+            <h3 className="guia-sidebar-title">
+              <Filter size={16} className="guia-sidebar-title-icon" /> Categorias
+            </h3>
+            <ul className="guia-cat-list">
+              <li className="guia-cat-item">
+                <Link 
+                  href="/guia-comercial" 
+                  className={`guia-cat-link ${!categoriaSlug ? 'active' : ''}`}
+                >
+                  <span>Todas as Categorias</span>
+                  <ChevronRight size={14} className="guia-cat-arrow" />
                 </Link>
               </li>
               {categoriasMock.map(cat => (
-                <li key={cat.id} style={{ marginBottom: '10px' }}>
-                  <Link href={`/guia-comercial?categoria=${cat.slug}`} style={{ color: categoriaSlug === cat.slug ? 'var(--primary-color)' : 'var(--text-secondary)', fontWeight: categoriaSlug === cat.slug ? 'bold' : 'normal' }}>
-                    {cat.nome}
+                <li key={cat.id} className="guia-cat-item">
+                  <Link 
+                    href={`/guia-comercial?categoria=${cat.slug}${tipoFiltro ? `&tipo=${tipoFiltro}` : ''}`} 
+                    className={`guia-cat-link ${categoriaSlug === cat.slug ? 'active' : ''}`}
+                  >
+                    <span>{cat.nome}</span>
+                    <ChevronRight size={14} className="guia-cat-arrow" />
                   </Link>
                 </li>
               ))}
             </ul>
             
-            <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid #eaeaea' }} />
+            <hr className="guia-divider" />
             
-            <h3 style={{ marginBottom: '15px', color: 'var(--primary-color)' }}>Filtros</h3>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
-              <input type="checkbox" /> Aberto Agora
+            <h3 className="guia-sidebar-title">
+              <SlidersHorizontal size={16} className="guia-sidebar-title-icon" /> Filtros
+            </h3>
+            <label className="guia-checkbox-label">
+              <input 
+                type="checkbox" 
+                checked={somenteAbertos}
+                onChange={(e) => setSomenteAbertos(e.target.checked)}
+                className="guia-checkbox"
+              /> 
+              Aberto Agora
             </label>
+
+            {hasFiltrosAtivos && (
+              <button 
+                type="button"
+                onClick={limparFiltros}
+                className="guia-clear-btn"
+              >
+                <X size={14} /> Limpar Filtros
+              </button>
+            )}
           </aside>
 
           {/* Listagem de Empresas */}
-          <div style={{ flex: 1, width: '100%' }}>
+          <div className="guia-main">
             <div className="guia-header">
-              <h2 style={{ fontFamily: 'var(--font-outfit), sans-serif', fontWeight: 700 }}>Resultados ({empresasFiltradas.length})</h2>
-              <select style={{ padding: '10px 15px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', outline: 'none', background: 'var(--bg-light)' }}>
+              <h2 className="guia-results-title">
+                Resultados
+                <span className="guia-results-count">{empresasFiltradas.length}</span>
+              </h2>
+              <select className="guia-select">
                 <option>Relevância</option>
                 <option>Melhor Avaliação</option>
                 <option>Mais Recentes</option>
@@ -157,14 +658,29 @@ function GuiaComercialContent() {
             </div>
             
             {empresasFiltradas.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+              <div className="guia-cards-grid">
                 {empresasFiltradas.map((empresa) => (
                   <CompanyCard key={empresa.id} empresa={empresa as Empresa} />
                 ))}
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-                <p>Nenhuma empresa ou entidade encontrada para os filtros selecionados.</p>
+              <div className="guia-empty-state">
+                <div className="guia-empty-icon">
+                  <SearchX size={26} />
+                </div>
+                <h3 className="guia-empty-title">Nenhum resultado encontrado</h3>
+                <p className="guia-empty-desc">
+                  Não encontramos empresas ou entidades que correspondam à sua busca ou filtros selecionados.
+                </p>
+                {hasFiltrosAtivos && (
+                  <button 
+                    type="button" 
+                    onClick={limparFiltros} 
+                    className="guia-empty-reset-btn"
+                  >
+                    <X size={16} /> Limpar todos os filtros
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -177,8 +693,18 @@ function GuiaComercialContent() {
 
 export default function GuiaComercial() {
   return (
-    <Suspense fallback={<div>Carregando...</div>}>
-      <GuiaComercialContent />
-    </Suspense>
+    <>
+      <style>{`@keyframes guia-spin { to { transform: rotate(360deg); } }`}</style>
+      <Suspense fallback={
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-offwhite)' }}>
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <Loader2 size={32} style={{ animation: 'guia-spin 0.8s linear infinite', display: 'block', margin: '0 auto 12px' }} />
+            <span style={{ fontSize: '0.95rem' }}>Carregando guia comercial...</span>
+          </div>
+        </div>
+      }>
+        <GuiaComercialContent />
+      </Suspense>
+    </>
   );
 }

@@ -23,6 +23,23 @@ function ContatoContent() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    // Auto-preenche nome e email se o usuário estiver logado
+    const loadUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user) {
+        if (session.user.email) setEmail(session.user.email);
+        
+        const meta = session.user.user_metadata;
+        if (meta) {
+          const nomeUsuario = meta.full_name || meta.nome || meta.name || '';
+          if (nomeUsuario) setNome(nomeUsuario);
+        }
+      }
+    };
+    loadUser();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEnviando(true);
@@ -68,127 +85,274 @@ function ContatoContent() {
   };
 
   return (
-    <main style={{ padding: '60px 20px', backgroundColor: 'var(--bg-offwhite)', minHeight: 'calc(100vh - 200px)' }}>
+    <main className="contato-page">
       <style>{`
-        .contato-grid {
-          display: grid;
-          grid-template-columns: 1fr 1.5fr;
-          gap: 40px;
+        .contato-page {
+          background-color: var(--bg-offwhite);
+          min-height: calc(100vh - 100px);
+          display: flex;
+          align-items: center;
+          padding: 80px 20px;
         }
-        @media (max-width: 768px) {
-          .contato-grid {
+
+        .contato-container {
+          max-width: 1100px;
+          margin: 0 auto;
+          width: 100%;
+          display: grid;
+          grid-template-columns: 1fr 1.2fr;
+          gap: 60px;
+          align-items: start;
+        }
+
+        .contato-header {
+          margin-bottom: 40px;
+        }
+
+        .contato-title {
+          font-size: 3rem;
+          color: var(--text-primary);
+          line-height: 1.1;
+          margin-bottom: 16px;
+        }
+
+        .contato-title span {
+          color: var(--primary-color);
+        }
+
+        .contato-subtitle {
+          font-size: 1.1rem;
+          color: var(--text-secondary);
+          line-height: 1.5;
+        }
+
+        .info-list {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 30px;
+        }
+
+        .info-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 20px;
+        }
+
+        .info-icon-wrapper {
+          width: 48px;
+          height: 48px;
+          border-radius: var(--radius-pill);
+          background-color: var(--primary-light);
+          color: var(--primary-color);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: transform 0.3s ease;
+        }
+
+        .info-item:hover .info-icon-wrapper {
+          transform: scale(1.1);
+        }
+
+        .info-content h4 {
+          color: var(--text-primary);
+          font-size: 1rem;
+          margin-bottom: 4px;
+        }
+
+        .info-content p {
+          color: var(--text-secondary);
+          font-size: 0.95rem;
+          line-height: 1.4;
+        }
+
+        .form-card {
+          background: var(--bg-light);
+          padding: 40px;
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-lg);
+          border: 1px solid var(--border-color);
+        }
+
+        .form-group {
+          margin-bottom: 24px;
+        }
+
+        .form-label {
+          display: block;
+          font-weight: 500;
+          color: var(--text-primary);
+          margin-bottom: 8px;
+          font-size: 0.95rem;
+        }
+
+        .form-input {
+          width: 100%;
+          padding: 14px 16px;
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+          font-family: inherit;
+          font-size: 1rem;
+          color: var(--text-primary);
+          background-color: var(--bg-offwhite);
+          transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+          outline: none;
+          border-color: var(--primary-color);
+          background-color: var(--bg-light);
+          box-shadow: 0 0 0 4px var(--primary-light);
+        }
+
+        .form-input::placeholder {
+          color: var(--text-tertiary);
+        }
+
+        textarea.form-input {
+          resize: vertical;
+          min-height: 120px;
+        }
+
+        .submit-btn {
+          width: 100%;
+          padding: 16px;
+          font-size: 1rem;
+          border-radius: var(--radius-md);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          margin-top: 10px;
+        }
+
+        @media (max-width: 900px) {
+          .contato-container {
             grid-template-columns: 1fr;
-            gap: 30px;
+            gap: 50px;
+          }
+          
+          .contato-title {
+            font-size: 2.5rem;
+          }
+          
+          .form-card {
+            padding: 30px 20px;
           }
         }
       `}</style>
-      <div className="container" style={{ maxWidth: '1000px' }}>
+      
+      <div className="contato-container">
         
-        <h1 style={{ textAlign: 'center', marginBottom: '10px', color: 'var(--primary-color)' }}>Fale Conosco</h1>
-        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '50px' }}>
-          Dúvidas, sugestões ou quer reivindicar o seu negócio? Mande uma mensagem para nossa equipe.
-        </p>
-
-        <div className="contato-grid">
-          
-          {/* Informações de Contato */}
-          <div>
-            <h3 style={{ marginBottom: '20px' }}>Nossos Contatos</h3>
-            <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '20px', color: 'var(--text-secondary)' }}>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '15px' }}>
-                <div style={{ backgroundColor: 'var(--primary-color)', color: '#fff', padding: '10px', borderRadius: '50%' }}>
-                  <MapPin size={20} />
-                </div>
-                <div>
-                  <h4 style={{ color: '#1a202c', marginBottom: '3px' }}>Endereço</h4>
-                  <p>Rua Principal, 123 - Centro<br />Sua Cidade / SC</p>
-                </div>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '15px' }}>
-                <div style={{ backgroundColor: 'var(--primary-color)', color: '#fff', padding: '10px', borderRadius: '50%' }}>
-                  <Phone size={20} />
-                </div>
-                <div>
-                  <h4 style={{ color: '#1a202c', marginBottom: '3px' }}>Telefone / WhatsApp</h4>
-                  <p>(00) 9 0000-0000</p>
-                </div>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'flex-start', gap: '15px' }}>
-                <div style={{ backgroundColor: 'var(--primary-color)', color: '#fff', padding: '10px', borderRadius: '50%' }}>
-                  <Mail size={20} />
-                </div>
-                <div>
-                  <h4 style={{ color: '#1a202c', marginBottom: '3px' }}>E-mail</h4>
-                  <p>contato@guia1555.com</p>
-                </div>
-              </li>
-            </ul>
+        {/* Lado Esquerdo - Mensagem e Info */}
+        <div className="contato-info">
+          <div className="contato-header">
+            <h1 className="contato-title">Como podemos <span>ajudar?</span></h1>
+            <p className="contato-subtitle">
+              Seja para tirar uma dúvida, enviar uma sugestão ou reivindicar a página do seu negócio, nossa equipe está pronta para ouvir você.
+            </p>
           </div>
 
-          {/* Formulário de Contato */}
-          <div style={{ backgroundColor: '#fff', padding: '30px', borderRadius: 'var(--radius-md)', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500 }}>Nome Completo</label>
-                <input 
-                  type="text" 
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Seu nome" 
-                  required
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
-                />
+          <ul className="info-list">
+            <li className="info-item">
+              <div className="info-icon-wrapper">
+                <MapPin size={24} strokeWidth={1.5} />
               </div>
-              
-              <div>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500 }}>E-mail</label>
-                <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com" 
-                  required
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
-                />
+              <div className="info-content">
+                <h4>Onde estamos</h4>
+                <p>Rua Principal, 123 - Centro<br />Sua Cidade / SC</p>
               </div>
-              
-              <div>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500 }}>Assunto</label>
-                <input 
-                  type="text" 
-                  value={assunto}
-                  onChange={(e) => setAssunto(e.target.value)}
-                  placeholder="Ex: Dúvida, Reivindicar Empresa..." 
-                  required
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
-                />
+            </li>
+            <li className="info-item">
+              <div className="info-icon-wrapper">
+                <Phone size={24} strokeWidth={1.5} />
               </div>
-              
-              <div>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500 }}>Mensagem</label>
-                <textarea 
-                  value={mensagem}
-                  onChange={(e) => setMensagem(e.target.value)}
-                  placeholder="Escreva sua mensagem aqui..." 
-                  required
-                  rows={5}
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)', resize: 'vertical' }} 
-                ></textarea>
+              <div className="info-content">
+                <h4>Fale diretamente</h4>
+                <p>(00) 9 0000-0000</p>
               </div>
-
-              <button 
-                type="submit" 
-                className="btn-theme" 
-                disabled={enviando}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', opacity: enviando ? 0.7 : 1 }}
-              >
-                <Send size={18} />
-                {enviando ? 'Enviando...' : 'Enviar Mensagem'}
-              </button>
-            </form>
-          </div>
-
+            </li>
+            <li className="info-item">
+              <div className="info-icon-wrapper">
+                <Mail size={24} strokeWidth={1.5} />
+              </div>
+              <div className="info-content">
+                <h4>Escreva para nós</h4>
+                <p>contato@guia1555.com</p>
+              </div>
+            </li>
+          </ul>
         </div>
+
+        {/* Lado Direito - Formulário */}
+        <div className="form-card">
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label htmlFor="nome" className="form-label">Nome Completo</label>
+              <input 
+                id="nome"
+                type="text" 
+                className="form-input"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Como devemos chamar você?" 
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">E-mail</label>
+              <input 
+                id="email"
+                type="email" 
+                className="form-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@melhoremail.com" 
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="assunto" className="form-label">Assunto</label>
+              <input 
+                id="assunto"
+                type="text" 
+                className="form-input"
+                value={assunto}
+                onChange={(e) => setAssunto(e.target.value)}
+                placeholder="Sobre o que vamos conversar?" 
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="mensagem" className="form-label">Mensagem</label>
+              <textarea 
+                id="mensagem"
+                className="form-input"
+                value={mensagem}
+                onChange={(e) => setMensagem(e.target.value)}
+                placeholder="Escreva todos os detalhes aqui..." 
+                required
+                rows={5}
+              ></textarea>
+            </div>
+
+            <button 
+              type="submit" 
+              className="btn-theme submit-btn" 
+              disabled={enviando}
+              style={{ opacity: enviando ? 0.7 : 1 }}
+            >
+              <Send size={20} strokeWidth={1.5} />
+              {enviando ? 'Enviando...' : 'Enviar Mensagem'}
+            </button>
+          </form>
+        </div>
+
       </div>
     </main>
   );

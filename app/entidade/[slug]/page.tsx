@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { empresasMock } from '../../../lib/data';
-import { MapPin, Star, Phone, Globe, Clock } from 'lucide-react';
+import { MapPin, Star, Phone, Globe, Clock, Instagram, Facebook, Edit, CheckCircle2, ShieldCheck, ChevronRight, Loader2, HeartHandshake, Tag } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 export default function PerfilEntidade({ params }: { params: { slug: string } }) {
   const [empresa, setEmpresa] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -17,6 +18,10 @@ export default function PerfilEntidade({ params }: { params: { slug: string } })
       const slug = params.slug;
       
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setUserId(session.user.id);
+        }
         const { data, error } = await supabase.from('entidades').select('*').eq('slug', slug).limit(1);
         if (data && data.length > 0 && !error) {
           setEmpresa(data[0]);
@@ -50,115 +55,703 @@ export default function PerfilEntidade({ params }: { params: { slug: string } })
   };
 
   if (loading) {
-    return <div style={{ padding: '100px', textAlign: 'center' }}>Carregando...</div>;
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-offwhite)' }}>
+        <style>{`@keyframes ep-spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <Loader2 size={32} style={{ animation: 'ep-spin 0.8s linear infinite', display: 'block', margin: '0 auto 12px' }} />
+          <span style={{ fontSize: '0.9rem' }}>Carregando perfil da entidade...</span>
+        </div>
+      </div>
+    );
   }
 
   if (!empresa) {
     return (
-      <div style={{ padding: '100px', textAlign: 'center', minHeight: '60vh' }}>
-        <h2>Página não encontrada</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
-          O negócio ou entidade que você procura não existe ou ainda não foi aprovado.
+      <div style={{ padding: '100px 20px', textAlign: 'center', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '12px' }}>Entidade não encontrada</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', maxWidth: '400px' }}>
+          A entidade que você procura não existe ou ainda não foi aprovada.
         </p>
-        <Link href="/guia-comercial" className="btn-theme" style={{ display: 'inline-block' }}>Voltar ao Guia Comercial</Link>
+        <Link href="/guia-comercial?tipo=entidades" className="btn-theme" style={{ display: 'inline-block' }}>Voltar ao Guia de Entidades</Link>
       </div>
     );
   }
 
   return (
-    <main style={{ backgroundColor: 'var(--bg-offwhite)', minHeight: '100vh', paddingBottom: '60px' }}>
-      {/* Capa */}
-      <div style={{ height: '300px', backgroundColor: '#333', position: 'relative' }}>
+    <main className="ep-page">
+      <style>{`
+        @keyframes ep-spin { to { transform: rotate(360deg); } }
+
+        .ep-page {
+          background-color: var(--bg-offwhite);
+          min-height: 100vh;
+          padding-bottom: 80px;
+        }
+
+        /* ── Hero / Capa ── */
+        .ep-hero {
+          height: 400px;
+          position: relative;
+          background-color: #1e293b;
+          overflow: hidden;
+        }
+
+        @media (max-width: 640px) {
+          .ep-hero { height: 260px; }
+        }
+
+        .ep-hero-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          opacity: 0.55;
+          position: absolute;
+          inset: 0;
+          transition: transform 6s ease;
+        }
+
+        .ep-hero:hover .ep-hero-img {
+          transform: scale(1.03);
+        }
+
+        /* Gradiente sobre a capa */
+        .ep-hero-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            to bottom,
+            transparent 30%,
+            rgba(0,0,0,0.68) 100%
+          );
+          z-index: 1;
+        }
+
+        /* Botão Editar no hero */
+        .ep-edit-btn {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          z-index: 20;
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          background: rgba(255,255,255,0.92);
+          backdrop-filter: blur(6px);
+          color: var(--text-primary);
+          padding: 9px 16px;
+          border-radius: var(--radius-sm);
+          font-weight: 700;
+          font-size: 0.875rem;
+          font-family: inherit;
+          text-decoration: none;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+          transition: background-color 0.2s ease, transform 0.15s ease;
+        }
+
+        .ep-edit-btn:hover {
+          background: #fff;
+          transform: translateY(-1px);
+        }
+
+        /* Título sobre a capa */
+        .ep-hero-content {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 10;
+          padding: 28px 32px;
+        }
+
+        .ep-hero-name {
+          font-family: var(--font-outfit), sans-serif;
+          font-size: 2.6rem;
+          font-weight: 900;
+          color: #fff;
+          text-transform: uppercase;
+          letter-spacing: -0.01em;
+          text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+          margin: 0 0 10px;
+          line-height: 1.1;
+        }
+
+        .ep-hero-badges {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          align-items: center;
+        }
+
+        .ep-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 4px 12px;
+          border-radius: 99px;
+          font-size: 0.78rem;
+          font-weight: 700;
+          backdrop-filter: blur(6px);
+        }
+
+        .ep-badge-verified {
+          background: rgba(5, 150, 105, 0.85);
+          color: #fff;
+        }
+
+        .ep-badge-category {
+          background: rgba(255,255,255,0.2);
+          color: #fff;
+          border: 1px solid rgba(255,255,255,0.35);
+        }
+
+        .ep-badge-type {
+          background: var(--primary-color);
+          color: #fff;
+        }
+
+        .ep-badge-status-open {
+          background: #22c55e;
+          color: #fff;
+        }
+
+        .ep-badge-status-closed {
+          background: #ef4444;
+          color: #fff;
+        }
+
+        @media (max-width: 640px) {
+          .ep-hero-name { font-size: 1.6rem; }
+          .ep-hero-content { padding: 20px 18px; }
+        }
+
+        /* ── Logo flutuante ── */
+        .ep-logo-wrap {
+          width: 96px;
+          height: 96px;
+          border-radius: 16px;
+          overflow: hidden;
+          background: #fff;
+          border: 3px solid #fff;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.14);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .ep-logo-wrap img {
+          max-width: 100%;
+          max-height: 100%;
+          object-fit: contain;
+          padding: 6px;
+        }
+
+        /* ── Layout principal ── */
+        .ep-layout {
+          display: grid;
+          grid-template-columns: 280px 1fr;
+          gap: 28px;
+          align-items: start;
+          max-width: 1200px;
+          margin: 32px auto 0;
+          padding: 0 24px;
+        }
+
+        @media (max-width: 900px) {
+          .ep-layout {
+            grid-template-columns: 1fr;
+            padding: 0 16px;
+            margin-top: 24px;
+            gap: 20px;
+          }
+        }
+
+        /* ── Sidebar (esquerda) ── */
+        .ep-sidebar {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        /* ── Card genérico ── */
+        .ep-card {
+          background: var(--bg-light);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-sm);
+          overflow: hidden;
+        }
+
+        .ep-card-header {
+          padding: 14px 20px;
+          border-bottom: 1px solid var(--border-color);
+          font-size: 0.8rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: var(--text-secondary);
+        }
+
+        .ep-card-body {
+          padding: 18px 20px;
+        }
+
+        /* ── Informações de contato ── */
+        .ep-info-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        .ep-info-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          font-size: 0.875rem;
+          color: var(--text-secondary);
+          line-height: 1.4;
+        }
+
+        .ep-info-icon {
+          color: var(--primary-color);
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+
+        /* ── Botão WhatsApp ── */
+        .ep-whatsapp-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          width: 100%;
+          padding: 11px 16px;
+          margin-top: 6px;
+          background: #22c55e;
+          color: #fff;
+          border-radius: var(--radius-sm);
+          font-weight: 700;
+          font-size: 0.9rem;
+          text-decoration: none;
+          transition: background-color 0.2s ease, transform 0.15s ease;
+        }
+
+        .ep-whatsapp-btn:hover {
+          background: #16a34a;
+          transform: translateY(-1px);
+        }
+
+        /* ── Redes sociais ── */
+        .ep-social-divider {
+          height: 1px;
+          background: var(--border-color);
+          margin: 14px 0;
+        }
+
+        .ep-social-label {
+          font-size: 0.78rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: var(--text-tertiary);
+          margin-bottom: 10px;
+        }
+
+        .ep-social-links {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .ep-social-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 9px;
+          padding: 9px 12px;
+          border-radius: var(--radius-sm);
+          border: 1.5px solid var(--border-color);
+          font-size: 0.875rem;
+          font-weight: 600;
+          text-decoration: none;
+          transition: border-color 0.2s ease, background-color 0.15s ease, transform 0.1s ease;
+          color: var(--text-primary);
+        }
+
+        .ep-social-link:hover {
+          transform: translateX(3px);
+        }
+
+        .ep-social-link-site:hover  { border-color: #6366f1; background: #eef2ff; color: #4f46e5; }
+        .ep-social-link-insta:hover { border-color: #d946ef; background: #fdf4ff; color: #a21caf; }
+        .ep-social-link-fb:hover    { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+
+        /* ── Botão Reivindicar ── */
+        .ep-claim-divider {
+          height: 1px;
+          background: var(--border-color);
+          margin: 14px 0;
+        }
+
+        .ep-claim-btn {
+          width: 100%;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 10px 14px;
+          background: var(--bg-offwhite);
+          border: 1.5px dashed var(--border-color);
+          border-radius: var(--radius-sm);
+          color: var(--text-secondary);
+          font-size: 0.875rem;
+          font-weight: 600;
+          font-family: inherit;
+          cursor: pointer;
+          transition: border-color 0.2s ease, background-color 0.15s ease, color 0.15s ease;
+        }
+
+        .ep-claim-btn:hover {
+          border-color: var(--primary-color);
+          background: var(--primary-light);
+          color: var(--primary-color);
+        }
+
+        /* ── Avaliações ── */
+        .ep-stars {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+          color: #f59e0b;
+          margin-bottom: 6px;
+        }
+
+        /* ── Conteúdo principal (direita) ── */
+        .ep-main {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+
+        /* ── Sobre ── */
+        .ep-about-text {
+          font-size: 0.925rem;
+          color: var(--text-secondary);
+          line-height: 1.7;
+          margin: 0;
+        }
+
+        /* ── Tags ── */
+        .ep-tags-list {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .ep-tag-item {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 5px 12px;
+          border-radius: 99px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          background-color: var(--bg-offwhite);
+          color: var(--text-secondary);
+          border: 1px solid var(--border-color);
+        }
+
+        /* ── Horários ── */
+        .ep-schedule-box {
+          font-size: 0.875rem;
+          color: var(--text-secondary);
+          line-height: 1.6;
+        }
+
+        /* ── Galeria ── */
+        .ep-gallery {
+          display: grid;
+          grid-template-columns: 1fr 1.8fr 1fr;
+          grid-template-rows: 160px 160px;
+          gap: 10px;
+        }
+
+        .ep-gallery-thumb {
+          border-radius: 10px;
+          overflow: hidden;
+          background: #e5e7eb;
+          cursor: pointer;
+          transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .ep-gallery-thumb:hover {
+          opacity: 0.88;
+          transform: scale(1.01);
+        }
+
+        .ep-gallery-thumb img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .ep-gallery-center {
+          grid-column: 2;
+          grid-row: 1 / span 2;
+          border-radius: 14px;
+          box-shadow: var(--shadow-md);
+        }
+
+        @media (max-width: 640px) {
+          .ep-gallery {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 200px 140px 140px;
+          }
+          .ep-gallery-center {
+            grid-column: 1 / span 2;
+            grid-row: 1;
+          }
+        }
+      `}</style>
+
+      {/* ── Hero / Capa ── */}
+      <div className="ep-hero">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={empresa.capa} alt={empresa.nome} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
+        <img src={empresa.capa} alt={empresa.nome} className="ep-hero-img" />
+        <div className="ep-hero-overlay" />
+
+        {/* Botão Editar se for proprietário */}
+        {userId === empresa.user_id && (
+          <Link href={`/entidade/${empresa.slug}/editar`} className="ep-edit-btn">
+            <Edit size={16} /> Editar Página
+          </Link>
+        )}
+
+        {/* Nome e badges */}
+        <div className="ep-hero-content">
+          <h1 className="ep-hero-name">{empresa.nome}</h1>
+          <div className="ep-hero-badges">
+            <span className="ep-badge ep-badge-type">
+              <HeartHandshake size={13} /> Entidade
+            </span>
+
+            {empresa.status && (
+              <span className={`ep-badge ${empresa.status === 'aberto' ? 'ep-badge-status-open' : 'ep-badge-status-closed'}`}>
+                {empresa.status === 'aberto' ? 'Aberto Agora' : 'Fechado'}
+              </span>
+            )}
+
+            {empresa.reivindicada === true && (
+              <span className="ep-badge ep-badge-verified">
+                <CheckCircle2 size={13} /> Verificada
+              </span>
+            )}
+
+            {empresa.categoria && (
+              <span className="ep-badge ep-badge-category">{empresa.categoria}</span>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="container" style={{ marginTop: '-80px', position: 'relative', zIndex: 10 }}>
-        <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-md)', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ textTransform: 'uppercase', color: 'var(--primary-color)', fontWeight: 700, fontSize: '0.85rem', marginBottom: '5px' }}>
-                {empresa.categoria}
-              </div>
-              <h1 style={{ fontSize: '2.2rem', marginBottom: '10px' }}>{empresa.nome}</h1>
-              <div style={{ display: 'flex', gap: '15px', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#f39c12', fontWeight: 'bold' }}>
-                  <Star size={16} fill="currentColor" /> {empresa.avaliacao} (120 avaliações)
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <MapPin size={16} /> {empresa.endereco}
-                </span>
-              </div>
-            </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
-              <div style={{ 
-                padding: '8px 15px', 
-                backgroundColor: empresa.status === 'aberto' ? 'var(--primary-color)' : '#e74c3c', 
-                color: '#fff', 
-                fontWeight: 'bold', 
-                borderRadius: 'var(--radius-pill)',
-                textTransform: 'uppercase',
-                fontSize: '0.8rem'
-              }}>
-                {empresa.status === 'aberto' ? 'Aberto Agora' : 'Fechado'}
-              </div>
-              <button className="btn-theme" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Phone size={16} /> Contatar via WhatsApp
-              </button>
-            </div>
-          </div>
+      {/* ── Layout ── */}
+      <div className="ep-layout">
 
-          <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #eaeaea' }} />
+        {/* ── Sidebar ── */}
+        <aside className="ep-sidebar">
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '40px' }}>
-            {/* Esquerda: Sobre */}
-            <div>
-              <h3 style={{ marginBottom: '15px' }}>Sobre a Entidade</h3>
-              <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '30px' }}>
-                {empresa.descricao}
-                <br /><br />
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-              </p>
-              
-              <h3 style={{ marginBottom: '15px' }}>Tags</h3>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                {empresa.tags?.map((tag: string) => (
-                  <span key={tag} style={{ backgroundColor: '#f0f0f0', padding: '5px 12px', borderRadius: 'var(--radius-pill)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              <button onClick={handleReivindicar} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', backgroundColor: '#f1f5f9', color: '#475569', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', textDecoration: 'none', transition: 'all 0.2s', marginTop: '20px', cursor: 'pointer', border: 'none' }}>
-                Reivindicar esta entidade
-              </button>
-            </div>
+          {/* Logo + Contato */}
+          <div className="ep-card">
+            <div className="ep-card-header">Informações da Entidade</div>
+            <div className="ep-card-body">
 
-            {/* Direita: Info Prática */}
-            <div style={{ backgroundColor: '#f9f9f9', padding: '25px', borderRadius: 'var(--radius-sm)' }}>
-              <h3 style={{ marginBottom: '20px' }}>Informações</h3>
-              
-              <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '15px', color: 'var(--text-secondary)' }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Phone size={18} style={{ color: 'var(--primary-color)' }} />
-                  {empresa.telefone}
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Globe size={18} style={{ color: 'var(--primary-color)' }} />
-                  <a href="#">www.site-exemplo.com.br</a>
-                </li>
-                <li style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <Clock size={18} style={{ color: 'var(--primary-color)', marginTop: '2px' }} />
-                  <div>
-                    <strong style={{ color: 'var(--text-primary)' }}>Horário de Funcionamento:</strong><br />
-                    Seg - Sex: 08:00 às 18:00<br />
-                    Sáb: 08:00 às 12:00
+              {/* Logo */}
+              {empresa.logo && (
+                <div style={{ marginBottom: '18px', display: 'flex', justifyContent: 'center' }}>
+                  <div className="ep-logo-wrap">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={empresa.logo} alt={`Logo ${empresa.nome}`} />
                   </div>
-                </li>
+                </div>
+              )}
+
+              {/* Lista de infos */}
+              <ul className="ep-info-list">
+                {empresa.endereco && (
+                  <li className="ep-info-item">
+                    <MapPin size={16} className="ep-info-icon" />
+                    <span>{empresa.endereco}</span>
+                  </li>
+                )}
+
+                {empresa.telefone && (
+                  <li style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div className="ep-info-item">
+                      <Phone size={16} className="ep-info-icon" />
+                      <span>{empresa.telefone}</span>
+                    </div>
+                    <a
+                      href={`https://wa.me/55${empresa.telefone.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ep-whatsapp-btn"
+                    >
+                      💬 Contatar via WhatsApp
+                    </a>
+                  </li>
+                )}
               </ul>
+
+              {/* Redes Sociais */}
+              {(empresa.site || empresa.instagram || empresa.facebook) && (
+                <>
+                  <div className="ep-social-divider" />
+                  <p className="ep-social-label">Presença Online</p>
+                  <div className="ep-social-links">
+                    {empresa.site && (
+                      <a
+                        href={empresa.site.startsWith('http') ? empresa.site : `https://${empresa.site}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ep-social-link ep-social-link-site"
+                      >
+                        <Globe size={15} /> Website <ChevronRight size={13} style={{ marginLeft: 'auto', opacity: 0.4 }} />
+                      </a>
+                    )}
+                    {empresa.instagram && (
+                      <a
+                        href={empresa.instagram.startsWith('http') ? empresa.instagram : `https://instagram.com/${empresa.instagram.replace('@','')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ep-social-link ep-social-link-insta"
+                      >
+                        <Instagram size={15} /> Instagram <ChevronRight size={13} style={{ marginLeft: 'auto', opacity: 0.4 }} />
+                      </a>
+                    )}
+                    {empresa.facebook && (
+                      <a
+                        href={empresa.facebook.startsWith('http') ? empresa.facebook : `https://facebook.com/${empresa.facebook}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ep-social-link ep-social-link-fb"
+                      >
+                        <Facebook size={15} /> Facebook <ChevronRight size={13} style={{ marginLeft: 'auto', opacity: 0.4 }} />
+                      </a>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Botão Reivindicar */}
+              {empresa.reivindicada !== true && (
+                <>
+                  <div className="ep-claim-divider" />
+                  <button onClick={handleReivindicar} className="ep-claim-btn">
+                    <ShieldCheck size={16} /> Reivindicar esta entidade
+                  </button>
+                </>
+              )}
             </div>
           </div>
+
+          {/* Avaliações */}
+          <div className="ep-card">
+            <div className="ep-card-header">Avaliações</div>
+            <div className="ep-card-body">
+              <div className="ep-stars">
+                {[1,2,3,4,5].map(i => <Star key={i} size={15} fill="currentColor" />)}
+                <span style={{ marginLeft: '6px', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.9rem' }}>
+                  {empresa.avaliacao || '5.0'}
+                </span>
+              </div>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', margin: 0 }}>Baseado nas opiniões dos cidadãos.</p>
+            </div>
+          </div>
+
+        </aside>
+
+        {/* ── Conteúdo principal (direita) ── */}
+        <div className="ep-main">
+
+          {/* Sobre */}
+          <div className="ep-card">
+            <div className="ep-card-header">Sobre a Entidade</div>
+            <div className="ep-card-body">
+              <p className="ep-about-text">
+                {empresa.descricao || 'Sem descrição disponível para esta entidade.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Tags */}
+          {empresa.tags && empresa.tags.length > 0 && (
+            <div className="ep-card">
+              <div className="ep-card-header">Áreas de Atuação & Tags</div>
+              <div className="ep-card-body">
+                <div className="ep-tags-list">
+                  {empresa.tags.map((tag: string) => (
+                    <span key={tag} className="ep-tag-item">
+                      <Tag size={12} /> {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Horário de Funcionamento (Exibe apenas se houver dado real) */}
+          {(empresa.horario_funcionamento || empresa.horario) && (
+            <div className="ep-card">
+              <div className="ep-card-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={15} style={{ color: 'var(--primary-color)' }} /> Horário de Atendimento
+              </div>
+              <div className="ep-card-body">
+                <div className="ep-schedule-box" style={{ whiteSpace: 'pre-line' }}>
+                  {empresa.horario_funcionamento || empresa.horario}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Galeria se houver fotos */}
+          {(empresa.fotos_catalogo?.length > 0 || empresa.capa) && (
+            <div className="ep-card">
+              <div className="ep-card-header">Galeria de Fotos</div>
+              <div className="ep-card-body" style={{ padding: '16px' }}>
+                <div className="ep-gallery">
+                  {/* Lateral esquerda topo */}
+                  <div className="ep-gallery-thumb">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={empresa.fotos_catalogo?.[0] || empresa.capa} alt="Galeria 1" />
+                  </div>
+                  {/* Central */}
+                  <div className="ep-gallery-thumb ep-gallery-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={empresa.capa} alt="Foto principal" />
+                  </div>
+                  {/* Lateral direita topo */}
+                  <div className="ep-gallery-thumb">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={empresa.fotos_catalogo?.[2] || empresa.capa} alt="Galeria 3" />
+                  </div>
+                  {/* Lateral esquerda baixo */}
+                  <div className="ep-gallery-thumb">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={empresa.fotos_catalogo?.[1] || empresa.capa} alt="Galeria 2" />
+                  </div>
+                  {/* Lateral direita baixo */}
+                  <div className="ep-gallery-thumb">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={empresa.fotos_catalogo?.[3] || empresa.capa} alt="Galeria 4" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
       </div>

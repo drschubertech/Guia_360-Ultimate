@@ -1,7 +1,16 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import styles from './Footer.module.css';
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Não renderiza o Footer público nas rotas administrativas
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
   return (
     <footer className={styles.footer}>
       <div className={`container ${styles.grid}`}>
@@ -27,7 +36,7 @@ export default function Footer() {
           <p>Email: contato@guia360.com</p>
           <p>Telefone: (11) 1234-5678</p>
           <div style={{ marginTop: '15px' }}>
-            <button className="btn-theme btn-pill">Fale Conosco</button>
+            <Link href="/contato" className="btn-theme btn-pill">Fale Conosco</Link>
           </div>
         </div>
       </div>

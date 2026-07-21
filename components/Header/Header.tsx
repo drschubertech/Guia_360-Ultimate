@@ -14,6 +14,11 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Não renderiza o Header público nas rotas administrativas
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   const checkAdmin = async (userId: string) => {
     try {
       const { data: profile } = await supabase.from('profiles').select('role_id').eq('id', userId).single();

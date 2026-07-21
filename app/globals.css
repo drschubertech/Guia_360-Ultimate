@@ -4,6 +4,24 @@
   --primary-color-hover: #E55A3D;
   --primary-light: #FFEDE9;
   
+  /* Cores Semânticas de Status */
+  --success-color: #10B981;
+  --success-light: #ECFDF5;
+  --success-text: #047857;
+
+  --warning-color: #F59E0B;
+  --warning-light: #FFFBEB;
+  --warning-text: #B45309;
+
+  --danger-color: #EF4444;
+  --danger-hover: #DC2626;
+  --danger-light: #FEF2F2;
+  --danger-text: #B91C1C;
+
+  --info-color: #3B82F6;
+  --info-light: #EFF6FF;
+  --info-text: #1D4ED8;
+  
   /* Textos */
   --text-primary: #111827; /* Carvão muito escuro */
   --text-secondary: #4B5563; /* Cinza médio/escuro */
