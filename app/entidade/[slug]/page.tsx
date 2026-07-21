@@ -5,19 +5,21 @@ import { empresasMock } from '../../../lib/data';
 import { MapPin, Star, Phone, Globe, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function PerfilEntidade({ params }: { params: { slug: string } }) {
   const [empresa, setEmpresa] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     async function carregar() {
       const slug = params.slug;
       
       try {
-        const { data, error } = await supabase.from('empresas').select('*').eq('slug', slug).single();
-        if (data && !error) {
-          setEmpresa(data);
+        const { data, error } = await supabase.from('entidades').select('*').eq('slug', slug).limit(1);
+        if (data && data.length > 0 && !error) {
+          setEmpresa(data[0]);
         } else {
           // Se não encontrou no banco, tenta no mock
           const mock = empresasMock.find(e => e.slug === slug);
@@ -33,6 +35,19 @@ export default function PerfilEntidade({ params }: { params: { slug: string } })
     }
     carregar();
   }, [params.slug]);
+
+  const handleReivindicar = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      if (window.confirm('Para prosseguir com essa ação você deve ser cadastrado. Deseja se cadastrar agora?')) {
+        router.push('/cadastro-cidadao');
+      }
+    } else {
+      router.push(`/contato?assunto=Reivindicar Entidade: ${empresa?.nome}&company_id=${empresa?.id}&tipo=Entidade`);
+    }
+  };
 
   if (loading) {
     return <div style={{ padding: '100px', textAlign: 'center' }}>Carregando...</div>;
@@ -115,6 +130,9 @@ export default function PerfilEntidade({ params }: { params: { slug: string } })
                   </span>
                 ))}
               </div>
+              <button onClick={handleReivindicar} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', backgroundColor: '#f1f5f9', color: '#475569', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', textDecoration: 'none', transition: 'all 0.2s', marginTop: '20px', cursor: 'pointer', border: 'none' }}>
+                Reivindicar esta entidade
+              </button>
             </div>
 
             {/* Direita: Info Prática */}

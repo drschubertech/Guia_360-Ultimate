@@ -5,11 +5,13 @@ import { empresasMock } from '../../../lib/data';
 import { MapPin, Star, Phone, Globe, Clock, Instagram, Facebook, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function PerfilEmpresa({ params }: { params: { slug: string } }) {
   const [empresa, setEmpresa] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     async function carregar() {
@@ -20,9 +22,9 @@ export default function PerfilEmpresa({ params }: { params: { slug: string } }) 
         if (session) {
           setUserId(session.user.id);
         }
-        const { data, error } = await supabase.from('empresas').select('*').eq('slug', slug).single();
-        if (data && !error) {
-          setEmpresa(data);
+        const { data, error } = await supabase.from('empresas').select('*').eq('slug', slug).limit(1);
+        if (data && data.length > 0 && !error) {
+          setEmpresa(data[0]);
         } else {
           // Se não encontrou no banco, tenta no mock
           const mock = empresasMock.find(e => e.slug === slug);
@@ -38,6 +40,19 @@ export default function PerfilEmpresa({ params }: { params: { slug: string } }) 
     }
     carregar();
   }, [params.slug]);
+
+  const handleReivindicar = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      if (window.confirm('Para prosseguir com essa ação você deve ser cadastrado. Deseja se cadastrar agora?')) {
+        router.push('/cadastro-cidadao');
+      }
+    } else {
+      router.push(`/contato?assunto=Reivindicar Empresa: ${empresa?.nome}&company_id=${empresa?.id}&tipo=Empresa`);
+    }
+  };
 
   if (loading) {
     return <div style={{ padding: '100px', textAlign: 'center' }}>Carregando...</div>;
@@ -235,9 +250,9 @@ export default function PerfilEmpresa({ params }: { params: { slug: string } }) 
                 {/* Botão Reivindicar */}
                 {empresa.reivindicada !== true && (
                   <li style={{ marginTop: '10px', paddingTop: '15px', borderTop: '1px solid #eaeaea' }}>
-                    <Link href={`/contato?assunto=Reivindicar Empresa: ${empresa.nome}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 15px', backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: 'var(--radius-sm)', color: '#4b5563', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 'bold', transition: 'background-color 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <button onClick={handleReivindicar} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 15px', backgroundColor: '#fff', border: '1px solid #d1d5db', borderRadius: 'var(--radius-sm)', color: '#4b5563', fontSize: '0.9rem', fontWeight: 'bold', transition: 'background-color 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', cursor: 'pointer' }}>
                        🛡️ É o dono? Reivindique aqui
-                    </Link>
+                    </button>
                   </li>
                 )}
               </ul>

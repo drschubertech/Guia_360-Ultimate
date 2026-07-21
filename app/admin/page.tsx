@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nome, setNome] = useState('');
   const [tipoCadastro, setTipoCadastro] = useState<'empresa' | 'entidade'>('empresa');
+  const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
   const [loadingCriar, setLoadingCriar] = useState(false);
@@ -95,10 +96,27 @@ export default function AdminDashboard() {
     else fetchData();
   }
 
+  async function handleToggleReivindicada(id: string, isEntidade: boolean, currentStatus: any) {
+    const isCurrentlyClaimed = currentStatus === true || currentStatus === 'true';
+    const newStatus = !isCurrentlyClaimed;
+    const table = isEntidade ? 'entidades' : 'empresas';
+    
+    setProcessingId(id);
+    try {
+      const { error } = await supabase.from(table).update({ reivindicada: newStatus }).eq('id', id);
+      if (error) throw error;
+      fetchData();
+    } catch (error: any) {
+      alert('Erro ao atualizar: ' + error.message);
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
   async function handleAddEmpresa(e: React.FormEvent) {
     e.preventDefault();
     setLoadingCriar(true);
-    const slug = nome.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const slug = nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const table = tipoCadastro === 'entidade' ? 'entidades' : 'empresas';
     const { error } = await supabase.from(table).insert([{
       nome: nome, slug: slug, telefone: telefone, reivindicada: false, status: 'fechado' 
@@ -115,12 +133,29 @@ export default function AdminDashboard() {
   }
 
   // --- Funções de Mensagens ---
-  async function handleResolveMessage(msgId: string) {
-    if (!confirm('Marcar como resolvida?')) return;
-    setProcessingId(msgId);
+  async function handleResolveMessage(msg: any) {
+    if (!confirm(msg.company_id ? 'Aprovar reivindicação e vincular usuário à empresa?' : 'Enviar resposta e marcar como resolvida?')) return;
+    setProcessingId(msg.id);
+    
     try {
-      const { error } = await supabase.from('contact_messages').update({ status: 'resolved' }).eq('id', msgId);
+      const resposta = replyText[msg.id] || '';
+      const respostaFinal = resposta || (msg.company_id ? 'Reivindicação Aprovada! O local já está vinculado ao seu perfil.' : 'Resolvido pelo administrador.');
+      
+      const { error } = await supabase.from('contact_messages').update({ 
+        status: 'resolved',
+        resposta_admin: respostaFinal
+      }).eq('id', msg.id);
       if (error) throw error;
+      
+      if (msg.company_id && msg.user_id && msg.tipo_empresa) {
+        const table = msg.tipo_empresa.toLowerCase() === 'entidade' ? 'entidades' : 'empresas';
+        const { error: compErr } = await supabase.from(table).update({ 
+          user_id: msg.user_id,
+          reivindicada: true
+        }).eq('id', msg.company_id);
+        if (compErr) throw compErr;
+      }
+      
       fetchData();
     } catch (error: any) {
       alert('Erro: ' + error.message);
@@ -246,12 +281,23 @@ export default function AdminDashboard() {
                   <td style={{ padding: '16px 20px', color: '#64748b', fontSize: '0.9rem' }}>{emp.isEntidade ? 'Entidade' : 'Empresa'}</td>
                   <td style={{ padding: '16px 20px', color: '#64748b', fontSize: '0.9rem' }}>{new Date(emp.created_at).toLocaleDateString()}</td>
                   <td style={{ padding: '16px 20px' }}>
-                    {emp.reivindicada 
+                    {(emp.reivindicada === true || emp.reivindicada === 'true')
                       ? <span className="status-badge status-aprovado">Reivindicada</span>
                       : <span className="status-badge status-pendente" style={{ backgroundColor: '#f1f5f9', color: '#475569' }}>Disponível</span>}
                   </td>
                   <td style={{ padding: '16px 20px', textAlign: 'center' }}>
-                    <button onClick={() => handleDeleteEmpresa(emp.id, emp.isEntidade)} style={{ color: colors.red, background: 'none', border: 'none', cursor: 'pointer', padding: '6px' }} title="Excluir"><Trash2 size={18} /></button>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                      {(emp.reivindicada === true || emp.reivindicada === 'true') ? (
+                        <button onClick={() => handleToggleReivindicada(emp.id, emp.isEntidade, emp.reivindicada)} disabled={processingId === emp.id} style={{ width: '28px', height: '28px', backgroundColor: colors.orange, color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: processingId === emp.id ? 0.7 : 1 }} title="Remover Reivindicação">
+                          {processingId === emp.id ? <Loader2 size={14} className="animate-spin" /> : <X size={16} />}
+                        </button>
+                      ) : (
+                        <button onClick={() => handleToggleReivindicada(emp.id, emp.isEntidade, emp.reivindicada)} disabled={processingId === emp.id} style={{ width: '28px', height: '28px', backgroundColor: colors.green, color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: processingId === emp.id ? 0.7 : 1 }} title="Aprovar Reivindicação">
+                          {processingId === emp.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={16} />}
+                        </button>
+                      )}
+                      <button onClick={() => handleDeleteEmpresa(emp.id, emp.isEntidade)} style={{ color: colors.red, background: 'none', border: 'none', cursor: 'pointer', padding: '6px' }} title="Excluir"><Trash2 size={18} /></button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -275,14 +321,34 @@ export default function AdminDashboard() {
                     <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', color: '#334155', fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>
                       {msg.message}
                     </div>
+                    
+                    {msg.status === 'pending' && (
+                      <div style={{ marginTop: '15px' }}>
+                        <textarea 
+                          placeholder={msg.company_id ? "Mensagem de aprovação (opcional)..." : "Digite sua resposta para o usuário..."}
+                          value={replyText[msg.id] || ''}
+                          onChange={e => setReplyText({...replyText, [msg.id]: e.target.value})}
+                          rows={3}
+                          style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', resize: 'vertical' }}
+                        />
+                      </div>
+                    )}
+                    
+                    {msg.status === 'resolved' && msg.resposta_admin && (
+                      <div style={{ marginTop: '15px', backgroundColor: '#ecfdf5', padding: '12px', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
+                        <strong style={{ fontSize: '0.85rem', color: '#065f46', display: 'block', marginBottom: '4px' }}>Sua Resposta:</strong>
+                        <span style={{ fontSize: '0.9rem', color: '#064e3b', whiteSpace: 'pre-wrap' }}>{msg.resposta_admin}</span>
+                      </div>
+                    )}
                   </div>
-                  <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '160px' }}>
                     {msg.status === 'pending' ? (
-                      <button onClick={() => handleResolveMessage(msg.id)} disabled={processingId === msg.id} style={{ padding: '8px 14px', backgroundColor: '#e0f2fe', color: '#0369a1', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {processingId === msg.id ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Resolvido
+                      <button onClick={() => handleResolveMessage(msg)} disabled={processingId === msg.id} style={{ padding: '10px 14px', backgroundColor: msg.company_id ? '#10b981' : '#0ea5e9', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%' }}>
+                        {processingId === msg.id ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} 
+                        {msg.company_id ? 'Aprovar Reivindicação' : 'Enviar Resposta'}
                       </button>
                     ) : (
-                      <span style={{ padding: '8px 14px', backgroundColor: '#f1f5f9', color: '#64748b', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ padding: '8px 14px', backgroundColor: '#f1f5f9', color: '#64748b', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%' }}>
                         <Check size={16} /> Arquivado
                       </span>
                     )}

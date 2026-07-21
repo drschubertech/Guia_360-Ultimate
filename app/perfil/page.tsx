@@ -10,6 +10,7 @@ export default function Perfil() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [messages, setMessages] = useState<any[]>([]);
   
   // Dados do formulário
   const [nome, setNome] = useState('');
@@ -45,6 +46,19 @@ export default function Perfil() {
           const { data: role } = await supabase.from('user_roles').select('name').eq('id', profile.role_id).single();
           if (role?.name === 'admin') setIsAdmin(true);
         }
+      } catch (err) {
+        console.error(err);
+      }
+      
+      // Buscar mensagens e reivindicações do usuário
+      try {
+        const { data: msgData, error: msgError } = await supabase
+          .from('contact_messages')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false });
+          
+        if (msgData) setMessages(msgData);
       } catch (err) {
         console.error(err);
       }
@@ -247,6 +261,47 @@ export default function Perfil() {
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Minhas Mensagens e Solicitações */}
+        <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-color)', marginTop: '40px' }}>
+          <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+             📬 Minhas Solicitações e Mensagens
+          </h3>
+          
+          {messages.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)' }}>Você ainda não enviou nenhuma solicitação ou reivindicação.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {messages.map(msg => (
+                <div key={msg.id} style={{ padding: '20px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', backgroundColor: msg.status === 'resolved' ? '#f8fafc' : '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                    <div>
+                      <h4 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.05rem' }}>{msg.subject}</h4>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{new Date(msg.created_at).toLocaleString()}</span>
+                    </div>
+                    {msg.status === 'resolved' ? (
+                      <span style={{ padding: '4px 10px', backgroundColor: '#d1fae5', color: '#065f46', borderRadius: 'var(--radius-pill)', fontSize: '0.8rem', fontWeight: 'bold' }}>Resolvido</span>
+                    ) : (
+                      <span style={{ padding: '4px 10px', backgroundColor: '#fef3c7', color: '#92400e', borderRadius: 'var(--radius-pill)', fontSize: '0.8rem', fontWeight: 'bold' }}>Em Análise</span>
+                    )}
+                  </div>
+                  
+                  <div style={{ padding: '10px', backgroundColor: '#f1f5f9', borderRadius: 'var(--radius-sm)', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '15px' }}>
+                    <strong>Sua Mensagem:</strong><br />
+                    {msg.message}
+                  </div>
+
+                  {msg.status === 'resolved' && msg.resposta_admin && (
+                    <div style={{ padding: '12px', backgroundColor: '#ecfdf5', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid #10b981', fontSize: '0.95rem' }}>
+                      <strong style={{ color: '#065f46', display: 'block', marginBottom: '5px' }}>Resposta da Administração:</strong>
+                      <span style={{ color: '#064e3b', whiteSpace: 'pre-wrap' }}>{msg.resposta_admin}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </main>

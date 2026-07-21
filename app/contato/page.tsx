@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 function ContatoContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
@@ -25,15 +27,44 @@ function ContatoContent() {
     e.preventDefault();
     setEnviando(true);
     
-    // Simula o tempo de envio
-    setTimeout(() => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        if (window.confirm('Para prosseguir com essa ação você deve ser cadastrado. Deseja se cadastrar agora?')) {
+          router.push('/cadastro-cidadao');
+        }
+        setEnviando(false);
+        return;
+      }
+      
+      const userId = session.user.id;
+      const companyId = searchParams.get('company_id') || null;
+      const tipo = searchParams.get('tipo') || null;
+
+      const { error } = await supabase.from('contact_messages').insert([{
+        name: nome,
+        email: email,
+        subject: assunto,
+        message: mensagem,
+        user_id: userId,
+        company_id: companyId,
+        tipo_empresa: tipo,
+        status: 'pending'
+      }]);
+
+      if (error) throw error;
+
       alert('Mensagem enviada com sucesso! Nossa equipe entrará em contato em breve.');
       setNome('');
       setEmail('');
       setAssunto('');
       setMensagem('');
+    } catch (error: any) {
+      alert('Erro ao enviar mensagem: ' + error.message);
+    } finally {
       setEnviando(false);
-    }, 1500);
+    }
   };
 
   return (

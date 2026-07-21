@@ -128,7 +128,7 @@ export default function CadastroEmpresa() {
 
   const handleConcluir = async () => {
     setUploading(true);
-    const slug = nomeEntidade.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const slug = nomeEntidade.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     
     let finalLogoUrl = fotoLogoUrl;
     let finalCapaUrl = fotoCapaUrl;
