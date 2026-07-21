@@ -49,7 +49,7 @@ export default function AdminCategorias() {
   async function handleDelete(id: string) {
     if (!confirm('Tem certeza que deseja excluir esta categoria? As subcategorias atreladas também poderão ser removidas.')) return;
     
-    const { error } = await supabase.from('categorias').delete().eq('id', id);
+    const { error } = await supabase.from('categories').delete().eq('id', id);
     if (error) {
       alert('Erro ao excluir: ' + error.message);
     } else {

@@ -76,7 +76,7 @@ export default function AdminSubcategorias() {
   async function handleDelete(id: string) {
     if (!confirm('Tem certeza que deseja excluir esta subcategoria? As empresas atreladas a ela poderão ficar sem subcategoria.')) return;
     
-    const { error } = await supabase.from('subcategorias').delete().eq('id', id);
+    const { error } = await supabase.from('subcategories').delete().eq('id', id);
     if (error) {
       alert('Erro ao excluir: ' + error.message);
     } else {

@@ -55,10 +55,10 @@ export default function AdminNoticias() {
     let error;
 
     if (editId) {
-      const { error: err } = await supabase.from('noticias').update(dadosNoticia).eq('id', editId);
+      const { error: err } = await supabase.from('news').update(dadosNoticia).eq('id', editId);
       error = err;
     } else {
-      const { error: err } = await supabase.from('noticias').insert([dadosNoticia]);
+      const { error: err } = await supabase.from('news').insert([dadosNoticia]);
       error = err;
     }
 
@@ -89,7 +89,7 @@ export default function AdminNoticias() {
   async function handleDelete(id: string) {
     if (!confirm('Tem certeza que deseja excluir esta notícia?')) return;
     
-    const { error } = await supabase.from('noticias').delete().eq('id', id);
+    const { error } = await supabase.from('news').delete().eq('id', id);
     if (error) {
       alert('Erro ao excluir: ' + error.message);
     } else {

@@ -10,11 +10,11 @@
 }
 
 .topBar {
-  background-color: var(--bg-offwhite);
-  padding: 5px 0;
+  background-color: var(--primary-color);
+  padding: 6px 0;
   font-size: 0.8rem;
-  color: var(--text-secondary);
-  border-bottom: 1px solid #eaeaea;
+  color: #FFFFFF;
+  font-weight: 500;
 }
 
 .topBarContainer {

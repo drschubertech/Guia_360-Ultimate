@@ -50,14 +50,14 @@ export default function Home() {
     <main className={styles.main}>
       <section className={styles.hero}>
         <div className="container">
-          <h1 className={styles.title}>Explore a sua cidade!</h1>
+          <h1 className={styles.title}>Explore a <span>sua cidade!</span></h1>
           <div className={styles.searchBox}>
             <input
               type="text"
               placeholder="O que você está procurando?"
               className={styles.searchInput}
             />
-            <button className="btn-theme">Buscar</button>
+            <button className="btn-theme btn-pill" style={{ padding: '0 32px', fontSize: '1rem', letterSpacing: '0.02em' }}>Buscar</button>
           </div>
 
           <div className={styles.categoriesWrapper}>
@@ -77,21 +77,23 @@ export default function Home() {
       </section>
 
       <section className={`${styles.content} container`}>
-        <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ marginBottom: '20px' }}>Notícias e Eventos em Destaque</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+        <div style={{ marginBottom: '64px' }}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Notícias e Eventos</h2>
+          </div>
+          <div className={styles.grid}>
             {noticias.map((noticia) => (
               <PostCard key={noticia.id} noticia={noticia} />
             ))}
           </div>
         </div>
 
-        <div style={{ marginBottom: '40px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2>Empresas e Entidades em Destaque</h2>
-            <Link href="/guia-comercial" style={{ color: 'var(--primary-color)', fontWeight: '600' }}>Ver todas &rarr;</Link>
+        <div style={{ marginBottom: '64px' }}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Empresas em Destaque</h2>
+            <Link href="/guia-comercial" className={styles.sectionLink}>Ver todas &rarr;</Link>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+          <div className={styles.grid}>
             {empresas.length > 0 ? empresas.map((empresa) => (
               <CompanyCard key={empresa.id} empresa={empresa} />
             )) : empresasMock.map((empresa) => (

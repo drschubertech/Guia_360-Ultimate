@@ -78,6 +78,10 @@
   box-shadow: var(--shadow-md);
 }
 
+.categoryButton:hover .categoryIconBox {
+  box-shadow: 0 8px 16px rgba(255, 90, 31, 0.2);
+}
+
 .categoryIconBox {
   width: 32px;
   height: 32px;
@@ -95,7 +99,38 @@
 }
 
 .content {
-  padding: 40px 0;
+  padding: 64px 0;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.sectionLink {
+  color: var(--primary-color);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.sectionLink:hover {
+  text-decoration: underline;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
 }
 
 @media (max-width: 768px) {
@@ -111,6 +146,7 @@
     flex-direction: column;
     background: transparent;
     box-shadow: none;
+
     padding: 0;
   }
   

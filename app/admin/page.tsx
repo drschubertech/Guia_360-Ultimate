@@ -81,7 +81,6 @@ export default function AdminDashboard() {
     ];
     combined.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     setEmpresas(combined);
-
     if (msgData) setMessages(msgData);
 
     setLoading(false);
@@ -217,6 +216,7 @@ export default function AdminDashboard() {
       
       <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', marginBottom: '25px', overflowX: 'auto', paddingBottom: '2px' }}>
         <TabButton id="list" label="Diretório (Empresas/Entidades)" icon={<Building2 size={18} />} />
+
         <TabButton id="messages" label="Fale Conosco (Atendimento)" icon={<MessageSquare size={18} />} badge={messages.filter(m => m.status === 'pending').length > 0 ? messages.filter(m => m.status === 'pending').length : undefined} />
       </div>
 
