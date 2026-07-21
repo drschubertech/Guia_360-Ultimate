@@ -1,7 +1,11 @@
 import type { Metadata } from 'next';
+import { Inter, Outfit } from 'next/font/google';
 import Header from '../components/Header/Header';
 import Footer from '../components/Footer/Footer';
 import './globals.css';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
 
 export const metadata: Metadata = {
   title: 'Guia Local + Portal de Conteúdo',
@@ -15,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body>
+      <body className={`${inter.variable} ${outfit.variable}`}>
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <Header />
           <main style={{ flex: 1 }}>{children}</main>

@@ -1,9 +1,12 @@
 .header {
-  background-color: var(--bg-light);
-  border-bottom: 1px solid #eaeaea;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.6);
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: var(--shadow-sm);
 }
 
 .topBar {
@@ -32,13 +35,15 @@
 }
 
 .logo {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--primary-color);
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
   z-index: 101;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .menuButton {
@@ -101,14 +106,16 @@
     position: fixed;
     top: 0;
     right: -100%;
-    width: 250px;
+    width: 280px;
     height: 100vh;
-    background-color: var(--bg-light);
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     flex-direction: column;
-    padding-top: 80px;
+    padding-top: 100px;
     gap: 30px;
-    transition: right 0.3s ease-in-out;
-    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -4px 0 24px rgba(0,0,0,0.06);
     z-index: 100;
   }
 

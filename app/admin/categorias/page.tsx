@@ -17,7 +17,7 @@ export default function AdminCategorias() {
 
   async function fetchCategorias() {
     setFetching(true);
-    const { data, error } = await supabase.from('categories').select('*').order('name');
+    const { data, error } = await supabase.from('categorias').select('*').order('nome');
     if (data) setCategorias(data);
     if (error) console.error(error);
     setFetching(false);
@@ -29,10 +29,10 @@ export default function AdminCategorias() {
     
     const slug = nome.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     
-    const { error } = await supabase.from('categories').insert([{
-      name: nome, 
+    const { error } = await supabase.from('categorias').insert([{
+      nome: nome, 
       slug, 
-      icon_url: icone
+      icone: icone
     }]);
 
     setLoading(false);
@@ -49,7 +49,7 @@ export default function AdminCategorias() {
   async function handleDelete(id: string) {
     if (!confirm('Tem certeza que deseja excluir esta categoria? As subcategorias atreladas também poderão ser removidas.')) return;
     
-    const { error } = await supabase.from('categories').delete().eq('id', id);
+    const { error } = await supabase.from('categorias').delete().eq('id', id);
     if (error) {
       alert('Erro ao excluir: ' + error.message);
     } else {
@@ -152,9 +152,9 @@ export default function AdminCategorias() {
               <tr><td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '1.05rem' }}>Nenhuma categoria cadastrada.</td></tr>
             ) : categorias.map(cat => (
               <tr key={cat.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                <td style={{ padding: '16px 24px', fontWeight: 600, color: '#334155' }}>{cat.name}</td>
+                <td style={{ padding: '16px 24px', fontWeight: 600, color: '#334155' }}>{cat.nome}</td>
                 <td style={{ padding: '16px 24px', color: '#64748b' }}>{cat.slug}</td>
-                <td style={{ padding: '16px 24px', color: '#64748b' }}>{cat.icon_url || '-'}</td>
+                <td style={{ padding: '16px 24px', color: '#64748b' }}>{cat.icone || '-'}</td>
                 <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                   <button 
                     onClick={() => handleDelete(cat.id)} 

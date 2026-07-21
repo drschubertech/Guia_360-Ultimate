@@ -19,20 +19,18 @@ export default function AdminDashboard() {
     entidades: 0
   });
   
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Estados das Abas (Trazidos da antiga página Empresas)
-  const [activeTab, setActiveTab] = useState<'list' | 'claims' | 'messages'>('list');
+  // Estados das Abas
+  const [activeTab, setActiveTab] = useState<'list' | 'messages'>('list');
   const [empresas, setEmpresas] = useState<any[]>([]);
-  const [claims, setClaims] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
   
   // Estados do Modal de Criação Rápida
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nome, setNome] = useState('');
-  const [documento, setDocumento] = useState('');
+  const [tipoCadastro, setTipoCadastro] = useState<'empresa' | 'entidade'>('empresa');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
   const [loadingCriar, setLoadingCriar] = useState(false);
@@ -44,90 +42,56 @@ export default function AdminDashboard() {
   async function fetchData() {
     setLoading(true);
 
-    // Buscar dados do Dashboard
     const [
-      { count: compCount }, 
+      { count: empCount }, 
+      { count: entCount }, 
       { count: usersCount }, 
       { count: eventsCount },
-      { count: claimsCount },
       { count: newsCount },
-      { data: recentClaimsData },
       // Buscar dados das Abas
       { data: empData },
-      { data: claimsData },
+      { data: entData },
       { data: msgData }
     ] = await Promise.all([
-      supabase.from('companies').select('*', { count: 'exact', head: true }),
+      supabase.from('empresas').select('*', { count: 'exact', head: true }),
+      supabase.from('entidades').select('*', { count: 'exact', head: true }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
-      supabase.from('events').select('*', { count: 'exact', head: true }),
-      supabase.from('company_claims').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-      supabase.from('news').select('*', { count: 'exact', head: true }),
-      supabase.from('company_claims').select(`*, companies ( name ), profiles ( full_name )`).order('created_at', { ascending: false }).limit(5),
+      supabase.from('eventos').select('*', { count: 'exact', head: true }),
+      supabase.from('noticias').select('*', { count: 'exact', head: true }),
       
       // Abas
-      supabase.from('companies').select('*').order('created_at', { ascending: false }),
-      supabase.from('company_claims').select(`*, companies ( name, document ), profiles ( full_name, email:id )`).eq('status', 'pending').order('created_at', { ascending: false }),
+      supabase.from('empresas').select('*').order('created_at', { ascending: false }),
+      supabase.from('entidades').select('*').order('created_at', { ascending: false }),
       supabase.from('contact_messages').select('*').order('created_at', { ascending: false })
     ]);
 
     setStats({
-      empresas: compCount || 0,
+      empresas: empCount || 0,
       usuarios: usersCount || 0,
       eventos: eventsCount || 0,
-      solicitacoes: claimsCount || 0,
+      solicitacoes: msgData ? msgData.filter(m => m.status === 'pending').length : 0,
       noticias: newsCount || 0,
-      entidades: compCount || 0
+      entidades: entCount || 0
     });
     
-    if (recentClaimsData) setRecentActivities(recentClaimsData);
-    
-    // Settar Abas
-    if (empData) setEmpresas(empData);
-    if (claimsData) setClaims(claimsData);
+    // Combine and sort
+    const combined = [
+      ...(empData || []).map(e => ({...e, isEntidade: false})), 
+      ...(entData || []).map(e => ({...e, isEntidade: true}))
+    ];
+    combined.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setEmpresas(combined);
+
     if (msgData) setMessages(msgData);
 
     setLoading(false);
   }
 
-  // --- Funções de Claims ---
-  async function handleApprove(claim: any) {
-    if (!confirm('Aprovar esta solicitação dará controle da empresa para este usuário. Continuar?')) return;
-    setProcessingId(claim.id);
-    try {
-      const { error: claimErr } = await supabase.from('company_claims').update({ status: 'approved', updated_at: new Date().toISOString() }).eq('id', claim.id);
-      if (claimErr) throw claimErr;
-      const { error: compErr } = await supabase.from('companies').update({ is_claimed: true }).eq('id', claim.company_id);
-      if (compErr) throw compErr;
-      const { error: memErr } = await supabase.from('entity_members').insert([{ company_id: claim.company_id, user_id: claim.user_id, title: 'Proprietário' }]);
-      if (memErr && memErr.code !== '23505') throw memErr;
-      alert('Solicitação aprovada!');
-      fetchData();
-    } catch (error: any) {
-      alert('Erro: ' + error.message);
-    } finally {
-      setProcessingId(null);
-    }
-  }
-
-  async function handleReject(claimId: string) {
-    if (!confirm('Tem certeza que deseja rejeitar esta solicitação?')) return;
-    setProcessingId(claimId);
-    try {
-      const { error } = await supabase.from('company_claims').update({ status: 'rejected', updated_at: new Date().toISOString() }).eq('id', claimId);
-      if (error) throw error;
-      alert('Solicitação rejeitada.');
-      fetchData();
-    } catch (error: any) {
-      alert('Erro: ' + error.message);
-    } finally {
-      setProcessingId(null);
-    }
-  }
-
-  // --- Funções de Empresas ---
-  async function handleDeleteEmpresa(id: string) {
-    if (!confirm('Excluir esta empresa permanentemente?')) return;
-    const { error } = await supabase.from('companies').delete().eq('id', id);
+  // --- Funções de Empresas/Entidades ---
+  async function handleDeleteEmpresa(id: string, isEntidade: boolean) {
+    if (!confirm('Excluir permanentemente?')) return;
+    const table = isEntidade ? 'entidades' : 'empresas';
+    const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) alert('Erro: ' + error.message);
     else fetchData();
   }
@@ -135,17 +99,19 @@ export default function AdminDashboard() {
   async function handleAddEmpresa(e: React.FormEvent) {
     e.preventDefault();
     setLoadingCriar(true);
-    const { error } = await supabase.from('companies').insert([{
-      name: nome, document: documento, contact_email: email, contact_phone: telefone, is_claimed: false 
+    const slug = nome.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const table = tipoCadastro === 'entidade' ? 'entidades' : 'empresas';
+    const { error } = await supabase.from(table).insert([{
+      nome: nome, slug: slug, telefone: telefone, reivindicada: false, status: 'fechado' 
     }]);
     setLoadingCriar(false);
     if (error) {
       alert('Erro: ' + error.message);
     } else {
-      setNome(''); setDocumento(''); setEmail(''); setTelefone('');
+      setNome(''); setEmail(''); setTelefone('');
       setIsModalOpen(false);
       fetchData();
-      alert('Empresa adicionada com sucesso!');
+      alert('Cadastro realizado com sucesso!');
     }
   }
 
@@ -205,7 +171,7 @@ export default function AdminDashboard() {
           onClick={() => setIsModalOpen(true)}
           style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', backgroundColor: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}
         >
-          <Plus size={16} /> Cadastrar Nova Empresa
+          <Plus size={16} /> Cadastrar Nova Empresa/Entidade
         </button>
       </div>
 
@@ -233,46 +199,24 @@ export default function AdminDashboard() {
 
       {/* DASHBOARD CARDS */}
       <div className="dashboard-grid">
-        <StatCard title="Total de Empresas Cadastradas" value={stats.empresas} icon={<Building2 size={20} />} color={colors.blue} />
+        <StatCard title="Empresas" value={stats.empresas} icon={<Building2 size={20} />} color={colors.blue} />
         <StatCard title="Novos Usuários" value={stats.usuarios} subtitle="Cadastrados no sistema" icon={<Users size={20} />} color={colors.orange} />
         <StatCard title="Eventos Ativos" value={stats.eventos} icon={<Calendar size={20} />} color={colors.green} />
-        <StatCard title="Solicitações Pendentes" value={stats.solicitacoes} subtitle="Pendentes de aprovação" icon={<ClipboardList size={20} />} color={colors.red} />
+        <StatCard title="Mensagens de Contato" value={stats.solicitacoes} subtitle="Pendentes" icon={<ClipboardList size={20} />} color={colors.red} />
       </div>
 
       <div className="dashboard-row-2">
-        <StatCard title="Novas Notícias" value={stats.noticias} icon={<Newspaper size={20} />} color={colors.gray} />
-        <StatCard title="Entidades Ativas" value={stats.entidades} icon={<Building size={20} />} color={colors.darkBlue} />
-        
-        {/* Atividades Recentes */}
-        <div className="recent-activities" style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Activity size={18} color={colors.blue} /> Atividades Recentes
-          </h3>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '15px', flex: 1 }}>
-            {recentActivities.map((act, index) => (
-              <li key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: act.status === 'approved' ? colors.green : act.status === 'pending' ? colors.orange : colors.red, marginTop: '8px', flexShrink: 0 }} />
-                <p style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.4 }}>
-                  {act.status === 'approved' && `Empresa '${act.companies?.name}' aprovada por Admin`}
-                  {act.status === 'pending' && `Solicitação de cadastro pendente para '${act.companies?.name}'`}
-                  {act.status === 'rejected' && `Solicitação rejeitada para '${act.companies?.name}'`}
-                </p>
-              </li>
-            ))}
-            {loading && <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Carregando atividades...</p>}
-            {!loading && recentActivities.length === 0 && <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Nenhuma atividade recente.</p>}
-          </ul>
-        </div>
+        <StatCard title="Notícias" value={stats.noticias} icon={<Newspaper size={20} />} color={colors.gray} />
+        <StatCard title="Entidades" value={stats.entidades} icon={<Building size={20} />} color={colors.darkBlue} />
       </div>
 
       <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '40px 0' }} />
 
-      {/* ADMINISTRAÇÃO DE DADOS (Substituindo a antiga página de empresas) */}
+      {/* ADMINISTRACAO DE DADOS */}
       <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1e293b', marginBottom: '20px' }}>Administração do Aplicativo</h2>
       
       <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', marginBottom: '25px', overflowX: 'auto', paddingBottom: '2px' }}>
         <TabButton id="list" label="Diretório (Empresas/Entidades)" icon={<Building2 size={18} />} />
-        <TabButton id="claims" label="Aprovações Pendentes" icon={<UserCheck size={18} />} badge={claims.length > 0 ? claims.length : undefined} />
         <TabButton id="messages" label="Fale Conosco (Atendimento)" icon={<MessageSquare size={18} />} badge={messages.filter(m => m.status === 'pending').length > 0 ? messages.filter(m => m.status === 'pending').length : undefined} />
       </div>
 
@@ -283,8 +227,8 @@ export default function AdminDashboard() {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
             <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
               <tr>
-                <th style={{ padding: '16px 20px', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>NOME / TIPO</th>
-                <th style={{ padding: '16px 20px', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>DOCUMENTO</th>
+                <th style={{ padding: '16px 20px', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>NOME</th>
+                <th style={{ padding: '16px 20px', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>TIPO</th>
                 <th style={{ padding: '16px 20px', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>DATA CADASTRO</th>
                 <th style={{ padding: '16px 20px', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>STATUS</th>
                 <th style={{ padding: '16px 20px', color: '#475569', fontWeight: 600, fontSize: '0.85rem', textAlign: 'center' }}>AÇÕES</th>
@@ -292,66 +236,22 @@ export default function AdminDashboard() {
             </thead>
             <tbody>
               {loading ? <tr><td colSpan={5} style={{ padding: '30px', textAlign: 'center' }}><Loader2 size={24} className="animate-spin" style={{ margin: '0 auto', color: '#94a3b8' }}/></td></tr> :
-               empresas.length === 0 ? <tr><td colSpan={5} style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>Nenhuma empresa no diretório.</td></tr> :
+               empresas.length === 0 ? <tr><td colSpan={5} style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>Nenhuma empresa/entidade no diretório.</td></tr> :
                empresas.map(emp => (
                 <tr key={emp.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '16px 20px', fontWeight: 600, color: '#334155', fontSize: '0.95rem' }}>
-                    {emp.name}
-                    <span style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400 }}>{emp.contact_email || 'S/ Email'}</span>
+                    {emp.nome}
+                    <span style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400 }}>{emp.telefone || 'S/ Telefone'}</span>
                   </td>
-                  <td style={{ padding: '16px 20px', color: '#64748b', fontSize: '0.9rem' }}>{emp.document || 'N/A'}</td>
+                  <td style={{ padding: '16px 20px', color: '#64748b', fontSize: '0.9rem' }}>{emp.isEntidade ? 'Entidade' : 'Empresa'}</td>
                   <td style={{ padding: '16px 20px', color: '#64748b', fontSize: '0.9rem' }}>{new Date(emp.created_at).toLocaleDateString()}</td>
                   <td style={{ padding: '16px 20px' }}>
-                    {emp.is_claimed 
+                    {emp.reivindicada 
                       ? <span className="status-badge status-aprovado">Reivindicada</span>
                       : <span className="status-badge status-pendente" style={{ backgroundColor: '#f1f5f9', color: '#475569' }}>Disponível</span>}
                   </td>
                   <td style={{ padding: '16px 20px', textAlign: 'center' }}>
-                    <button onClick={() => handleDeleteEmpresa(emp.id)} style={{ color: colors.red, background: 'none', border: 'none', cursor: 'pointer', padding: '6px' }} title="Excluir"><Trash2 size={18} /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        {/* ABA: CLAIMS */}
-        {activeTab === 'claims' && (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
-            <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-              <tr>
-                <th style={{ padding: '16px 20px', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>EMPRESA</th>
-                <th style={{ padding: '16px 20px', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>SOLICITANTE</th>
-                <th style={{ padding: '16px 20px', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>DATA</th>
-                <th style={{ padding: '16px 20px', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>STATUS</th>
-                <th style={{ padding: '16px 20px', color: '#475569', fontWeight: 600, fontSize: '0.85rem', textAlign: 'center' }}>AÇÕES</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? <tr><td colSpan={5} style={{ padding: '30px', textAlign: 'center' }}><Loader2 size={24} className="animate-spin" style={{ margin: '0 auto', color: '#94a3b8' }}/></td></tr> :
-               claims.length === 0 ? <tr><td colSpan={5} style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>Nenhuma solicitação pendente.</td></tr> :
-               claims.map(claim => (
-                <tr key={claim.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '16px 20px', fontWeight: 600, color: '#334155', fontSize: '0.95rem' }}>
-                    {claim.companies?.name}
-                    {claim.message && <span style={{ display: 'block', fontSize: '0.8rem', color: '#f59f00', fontWeight: 400, marginTop: '4px' }}>Msg: "{claim.message}"</span>}
-                  </td>
-                  <td style={{ padding: '16px 20px', color: '#64748b', fontSize: '0.9rem' }}>{claim.profiles?.full_name}</td>
-                  <td style={{ padding: '16px 20px', color: '#64748b', fontSize: '0.9rem' }}>{new Date(claim.created_at).toLocaleDateString()}</td>
-                  <td style={{ padding: '16px 20px' }}>
-                    <span className={`status-badge ${claim.status === 'pending' ? 'status-pendente' : claim.status === 'approved' ? 'status-aprovado' : 'status-rejeitado'}`}>
-                      {claim.status === 'pending' ? 'Pendente' : claim.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '16px 20px', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                      <button onClick={() => handleApprove(claim)} disabled={processingId === claim.id} style={{ width: '28px', height: '28px', backgroundColor: colors.green, color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: processingId === claim.id ? 0.7 : 1 }} title="Aprovar">
-                        {processingId === claim.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={16} />}
-                      </button>
-                      <button onClick={() => handleReject(claim.id)} disabled={processingId === claim.id} style={{ width: '28px', height: '28px', backgroundColor: colors.red, color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: processingId === claim.id ? 0.7 : 1 }} title="Rejeitar">
-                        <X size={16} />
-                      </button>
-                    </div>
+                    <button onClick={() => handleDeleteEmpresa(emp.id, emp.isEntidade)} style={{ color: colors.red, background: 'none', border: 'none', cursor: 'pointer', padding: '6px' }} title="Excluir"><Trash2 size={18} /></button>
                   </td>
                 </tr>
               ))}
@@ -393,44 +293,43 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* MODAL DE CRIAÇÃO RÁPIDA DE EMPRESA */}
+      {/* MODAL DE CRIAÇÃO RÁPIDA DE EMPRESA/ENTIDADE */}
       {isModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' }}>
-          <div style={{ backgroundColor: '#fff', width: '100%', maxWidth: '600px', borderRadius: '16px', padding: '30px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+          <div style={{ backgroundColor: '#fff', width: '100%', maxWidth: '600px', borderRadius: 'var(--radius-lg)', padding: '30px', boxShadow: 'var(--shadow-lg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1e293b' }}>Cadastrar Empresa para o Guia</h2>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1e293b' }}>Cadastrar no Guia</h2>
               <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><X size={24} /></button>
             </div>
             
-            <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: '25px', lineHeight: '1.5' }}>
-              Use este formulário para preencher o guia da cidade antecipadamente.
-            </p>
-
             <form onSubmit={handleAddEmpresa} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#475569', fontWeight: 500 }}>Razão Social / Nome da Empresa *</label>
-                <input type="text" value={nome} onChange={e => setNome(e.target.value)} required style={{ width: '100%', padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} placeholder="Ex: Pizzaria do João" />
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#475569', fontWeight: 500 }}>Tipo de Cadastro *</label>
+                <select value={tipoCadastro} onChange={e => setTipoCadastro(e.target.value as any)} style={{ width: '100%', padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontSize: '1rem', outline: 'none' }}>
+                  <option value="empresa">Empresa / Negócio</option>
+                  <option value="entidade">Entidade / ONG / Instituição</option>
+                </select>
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#475569', fontWeight: 500 }}>Razão Social / Nome *</label>
+                <input type="text" value={nome} onChange={e => setNome(e.target.value)} required style={{ width: '100%', padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontSize: '1rem', outline: 'none' }} placeholder="Ex: Pizzaria do João" />
               </div>
               
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#475569', fontWeight: 500 }}>CNPJ / CPF</label>
-                <input type="text" value={documento} onChange={e => setDocumento(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} placeholder="Apenas números" />
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#475569', fontWeight: 500 }}>Telefone Público</label>
+                <input type="text" value={telefone} onChange={e => setTelefone(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontSize: '1rem', outline: 'none' }} placeholder="(00) 00000-0000" />
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#475569', fontWeight: 500 }}>Telefone Público</label>
-                <input type="text" value={telefone} onChange={e => setTelefone(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} placeholder="(00) 00000-0000" />
-              </div>
-
-              <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#475569', fontWeight: 500 }}>E-mail Público</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} placeholder="contato@empresa.com" />
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', padding: '12px 16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontSize: '1rem', outline: 'none' }} placeholder="contato@empresa.com" />
               </div>
               
               <div style={{ gridColumn: '1 / -1', marginTop: '10px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '12px 24px', backgroundColor: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
                 <button type="submit" disabled={loadingCriar} style={{ padding: '12px 24px', backgroundColor: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', opacity: loadingCriar ? 0.7 : 1 }}>
-                  {loadingCriar ? <><Loader2 size={18} className="animate-spin" /> Salvando...</> : 'Criar Empresa Oficial'}
+                  {loadingCriar ? <><Loader2 size={18} className="animate-spin" /> Salvando...</> : 'Criar Cadastro'}
                 </button>
               </div>
             </form>

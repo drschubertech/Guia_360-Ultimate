@@ -18,13 +18,13 @@ export default function Footer() {
             <li><Link href="/">Início</Link></li>
             <li><Link href="/guia-comercial">Guia Comercial</Link></li>
             <li><Link href="/empresas">Empresas</Link></li>
-            <li><Link href="/cadastro-empresa">Anuncie seu Negócio</Link></li>
+            <li><Link href="/cadastro-empresa">Anuncie sua Empresas</Link></li>
           </ul>
         </div>
 
         <div className={styles.column}>
           <h3>Contato</h3>
-          <p>Email: contato@guia1555.com</p>
+          <p>Email: contato@guia360.com</p>
           <p>Telefone: (11) 1234-5678</p>
           <div style={{ marginTop: '15px' }}>
             <button className="btn-theme btn-pill">Fale Conosco</button>

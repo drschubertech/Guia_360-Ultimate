@@ -1,19 +1,38 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Menu, X, User } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings } from 'lucide-react';
 import styles from './Header.module.css';
 import { supabase } from '@/lib/supabase';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const checkAdmin = async (userId: string) => {
+    try {
+      const { data: profile } = await supabase.from('profiles').select('role_id').eq('id', userId).single();
+      if (profile?.role_id) {
+        const { data: role } = await supabase.from('user_roles').select('name').eq('id', profile.role_id).single();
+        if (role?.name === 'admin') setIsAdmin(true);
+        else setIsAdmin(false);
+      }
+    } catch (err) {
+      console.error(err);
+      setIsAdmin(false);
+    }
+  };
 
   useEffect(() => {
     // Busca a sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) checkAdmin(session.user.id);
     });
 
     // Escuta mudanças na autenticação (login, logout)
@@ -21,6 +40,8 @@ export default function Header() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ? { ...session.user } : null);
+      if (session?.user) checkAdmin(session.user.id);
+      else setIsAdmin(false);
     });
 
     // Escuta atualizações de perfil manuais
@@ -72,16 +93,30 @@ export default function Header() {
             
             <div className={styles.mobileActions}>
               {user ? (
-                <Link href="/perfil" className={styles.loginBtn} onClick={() => setIsMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px' }}>
-                  <div style={{ width: '24px', height: '24px', backgroundColor: 'var(--primary-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold', overflow: 'hidden' }}>
-                    {user.user_metadata?.avatar_url ? (
-                      <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      user.user_metadata?.nome?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || <User size={14} />
-                    )}
-                  </div>
-                  {user.user_metadata?.nome ? user.user_metadata.nome.split(' ')[0] : 'Meu Perfil'}
-                </Link>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%' }}>
+                  {pathname !== '/perfil' && (
+                    <Link href="/perfil" className={styles.loginBtn} onClick={() => setIsMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px' }}>
+                      <div style={{ width: '24px', height: '24px', backgroundColor: 'var(--primary-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold', overflow: 'hidden' }}>
+                        {user.user_metadata?.avatar_url ? (
+                          <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          user.user_metadata?.nome?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || <User size={14} />
+                        )}
+                      </div>
+                      {user.user_metadata?.nome ? user.user_metadata.nome.split(' ')[0] : 'Meu Perfil'}
+                    </Link>
+                  )}
+                  
+                  {isAdmin && (
+                    <Link href="/admin" className={styles.loginBtn} onClick={() => setIsMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px' }}>
+                      <Settings size={18} /> Painel Admin
+                    </Link>
+                  )}
+                  
+                  <button onClick={async () => { await supabase.auth.signOut(); setIsMenuOpen(false); router.push('/'); }} className={styles.loginBtn} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px', color: '#ef4444', border: 'none', background: 'transparent' }}>
+                    <LogOut size={18} /> Sair
+                  </button>
+                </div>
               ) : (
                 <>
                   <Link href="/login" className={styles.loginBtn} onClick={() => setIsMenuOpen(false)}>Entrar</Link>

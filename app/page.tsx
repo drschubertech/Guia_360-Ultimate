@@ -22,7 +22,12 @@ export default function Home() {
     async function carregarDados() {
       try {
         const { data: empData, error: empError } = await supabase.from('empresas').select('*');
-        if (!empError) setEmpresas([...empresasMock, ...(empData || [])]);
+        const { data: entData, error: entError } = await supabase.from('entidades').select('*');
+        
+        const empresasFormatadas = (!empError && empData) ? empData.map(e => ({ ...e, tipo: 'Empresa' })) : [];
+        const entidadesFormatadas = (!entError && entData) ? entData.map(e => ({ ...e, tipo: 'Entidade' })) : [];
+
+        setEmpresas([...empresasMock, ...empresasFormatadas, ...entidadesFormatadas]);
 
         const { data: notData, error: notError } = await supabase.from('noticias').select('*').order('created_at', { ascending: false }).limit(4);
         if (!notError && notData && notData.length > 0) setNoticias(notData);

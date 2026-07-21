@@ -21,7 +21,7 @@ export default function AdminSubcategorias() {
     setFetching(true);
     
     // Buscar categorias para o select
-    const { data: catData } = await supabase.from('categories').select('*').order('name');
+    const { data: catData } = await supabase.from('categorias').select('*').order('nome');
     if (catData) {
       setCategorias(catData);
       if (catData.length > 0 && !categoryId) {
@@ -31,14 +31,14 @@ export default function AdminSubcategorias() {
 
     // Buscar subcategorias com os nomes das categorias
     const { data: subData, error } = await supabase
-      .from('subcategories')
+      .from('subcategorias')
       .select(`
         *,
-        categories (
-          name
+        categorias (
+          nome
         )
       `)
-      .order('name');
+      .order('nome');
       
     if (subData) setSubcategorias(subData);
     if (error) console.error(error);
@@ -57,10 +57,10 @@ export default function AdminSubcategorias() {
     
     const slug = nome.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     
-    const { error } = await supabase.from('subcategories').insert([{
-      name: nome, 
+    const { error } = await supabase.from('subcategorias').insert([{
+      nome: nome, 
       slug, 
-      category_id: categoryId
+      categoria_id: categoryId
     }]);
 
     setLoading(false);
@@ -76,7 +76,7 @@ export default function AdminSubcategorias() {
   async function handleDelete(id: string) {
     if (!confirm('Tem certeza que deseja excluir esta subcategoria? As empresas atreladas a ela poderão ficar sem subcategoria.')) return;
     
-    const { error } = await supabase.from('subcategories').delete().eq('id', id);
+    const { error } = await supabase.from('subcategorias').delete().eq('id', id);
     if (error) {
       alert('Erro ao excluir: ' + error.message);
     } else {
@@ -115,7 +115,7 @@ export default function AdminSubcategorias() {
             >
               {categorias.length === 0 && <option value="">Nenhuma categoria cadastrada</option>}
               {categorias.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                <option key={cat.id} value={cat.id}>{cat.nome}</option>
               ))}
             </select>
           </div>
@@ -183,10 +183,10 @@ export default function AdminSubcategorias() {
               <tr><td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '1.05rem' }}>Nenhuma subcategoria cadastrada.</td></tr>
             ) : subcategorias.map(sub => (
               <tr key={sub.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                <td style={{ padding: '16px 24px', fontWeight: 600, color: '#334155' }}>{sub.name}</td>
+                <td style={{ padding: '16px 24px', fontWeight: 600, color: '#334155' }}>{sub.nome}</td>
                 <td style={{ padding: '16px 24px', color: '#64748b' }}>
                   <span style={{ backgroundColor: '#e2e8f0', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem' }}>
-                    {sub.categories?.name || 'Sem categoria'}
+                    {sub.categorias?.nome || 'Sem categoria'}
                   </span>
                 </td>
                 <td style={{ padding: '16px 24px', color: '#64748b' }}>{sub.slug}</td>

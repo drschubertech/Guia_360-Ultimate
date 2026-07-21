@@ -56,8 +56,8 @@ export default function CadastroCidadao() {
 
   return (
     <main style={{ padding: '60px 20px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 200px)' }}>
-      <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-md)', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', maxWidth: '450px' }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '10px', color: 'var(--primary-color)' }}>Crie sua Conta</h1>
+      <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '450px' }}>
+        <h1 style={{ textAlign: 'center', marginBottom: '10px', color: 'var(--primary-color)', fontFamily: 'var(--font-outfit), sans-serif', fontWeight: 800, letterSpacing: '-0.02em' }}>Crie sua Conta</h1>
         <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '30px' }}>
           Preencha seus dados para acessar como cidadão.
         </p>
@@ -78,7 +78,7 @@ export default function CadastroCidadao() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="João da Silva" 
-              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+              style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} 
             />
           </div>
           <div>
@@ -89,7 +89,7 @@ export default function CadastroCidadao() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="seu@email.com" 
-              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+              style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} 
             />
           </div>
           <div>
@@ -101,7 +101,7 @@ export default function CadastroCidadao() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••" 
-                style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+                style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} 
               />
               <button 
                 type="button" 
@@ -121,7 +121,7 @@ export default function CadastroCidadao() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••" 
-                style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+                style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} 
               />
               <button 
                 type="button" 

@@ -27,7 +27,7 @@ export default function AdminNoticias() {
       setUserId(session.user.id);
     }
     
-    const { data, error } = await supabase.from('news').select('*, profiles(full_name)').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('noticias').select('*, profiles(full_name)').order('created_at', { ascending: false });
     if (data) setNoticias(data);
     if (error) console.error(error);
     setFetching(false);
@@ -43,20 +43,22 @@ export default function AdminNoticias() {
     setLoading(true);
     
     const dadosNoticia = {
-      title: titulo, 
-      content: conteudo, 
-      image_url: imagemUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80',
-      author_id: userId,
-      published_at: new Date().toISOString()
+      titulo: titulo, 
+      conteudo: conteudo,
+      resumo: conteudo.substring(0, 100) + '...',
+      slug: titulo.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      imagem_url: imagemUrl || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80',
+      autor_id: userId,
+      data_publicacao: new Date().toISOString()
     };
     
     let error;
 
     if (editId) {
-      const { error: err } = await supabase.from('news').update(dadosNoticia).eq('id', editId);
+      const { error: err } = await supabase.from('noticias').update(dadosNoticia).eq('id', editId);
       error = err;
     } else {
-      const { error: err } = await supabase.from('news').insert([dadosNoticia]);
+      const { error: err } = await supabase.from('noticias').insert([dadosNoticia]);
       error = err;
     }
 
@@ -72,9 +74,9 @@ export default function AdminNoticias() {
 
   function handleEdit(noticia: any) {
     setEditId(noticia.id);
-    setTitulo(noticia.title);
-    setConteudo(noticia.content || '');
-    setImagemUrl(noticia.image_url || '');
+    setTitulo(noticia.titulo);
+    setConteudo(noticia.conteudo || '');
+    setImagemUrl(noticia.imagem_url || '');
   }
 
   function handleCancelEdit() {
@@ -87,7 +89,7 @@ export default function AdminNoticias() {
   async function handleDelete(id: string) {
     if (!confirm('Tem certeza que deseja excluir esta notícia?')) return;
     
-    const { error } = await supabase.from('news').delete().eq('id', id);
+    const { error } = await supabase.from('noticias').delete().eq('id', id);
     if (error) {
       alert('Erro ao excluir: ' + error.message);
     } else {
@@ -220,7 +222,7 @@ export default function AdminNoticias() {
               <tr><td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '1.05rem' }}>Nenhuma notícia publicada.</td></tr>
             ) : noticias.map(noticia => (
               <tr key={noticia.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                <td style={{ padding: '16px 24px', fontWeight: 600, color: '#334155' }}>{noticia.title}</td>
+                <td style={{ padding: '16px 24px', fontWeight: 600, color: '#334155' }}>{noticia.titulo}</td>
                 <td style={{ padding: '16px 24px', color: '#64748b' }}>{noticia.profiles?.full_name || 'Desconhecido'}</td>
                 <td style={{ padding: '16px 24px', color: '#64748b' }}>{new Date(noticia.created_at).toLocaleDateString()}</td>
                 <td style={{ padding: '16px 24px', textAlign: 'right' }}>

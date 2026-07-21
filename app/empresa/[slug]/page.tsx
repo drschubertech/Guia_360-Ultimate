@@ -75,6 +75,9 @@ export default function PerfilEmpresa({ params }: { params: { slug: string } }) 
       </div>
 
       <style>{`
+        .titulo-empresa {
+          font-family: var(--font-outfit), sans-serif;
+        }
         .empresa-grid {
           display: grid;
           grid-template-columns: 1fr 2fr 1fr;
@@ -131,7 +134,7 @@ export default function PerfilEmpresa({ params }: { params: { slug: string } }) 
             </div>
 
             {/* Caixa de Avaliações (Movida para a Esquerda) */}
-            <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+            <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#fff', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-color)' }}>
               <h4 style={{ marginBottom: '10px', color: '#1a202c' }}>Avaliações</h4>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#f59e0b', marginBottom: '5px' }}>
                 <Star size={16} fill="currentColor" />
@@ -159,7 +162,7 @@ export default function PerfilEmpresa({ params }: { params: { slug: string } }) 
               </div>
 
               {/* Foto Central (Capa) */}
-              <div className="galeria-central" style={{ borderRadius: '12px', overflow: 'hidden', backgroundColor: '#e5e7eb', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
+              <div className="galeria-central" style={{ borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: '#e5e7eb', boxShadow: 'var(--shadow-lg)' }}>
                 <img src={empresa.capa} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Centro" />
               </div>
 
@@ -182,7 +185,7 @@ export default function PerfilEmpresa({ params }: { params: { slug: string } }) 
               <h3 style={{ marginBottom: '15px', color: '#1a202c' }}>Informações</h3>
               
               {empresa.logo && (
-                <div style={{ marginBottom: '20px', width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#fff', boxShadow: '0 4px 15px rgba(0,0,0,0.08)', border: '1px solid #eaeaea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ marginBottom: '20px', width: '120px', height: '120px', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: '#fff', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <img src={empresa.logo} alt={`Logo ${empresa.nome}`} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', padding: '10px' }} />
                 </div>
               )}

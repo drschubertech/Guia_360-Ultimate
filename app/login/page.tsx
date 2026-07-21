@@ -39,8 +39,8 @@ export default function Login() {
 
   return (
     <main style={{ padding: '60px 20px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 200px)' }}>
-      <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-md)', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', maxWidth: '450px' }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '10px', color: 'var(--primary-color)' }}>Acesse sua Conta</h1>
+      <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '450px' }}>
+        <h1 style={{ textAlign: 'center', marginBottom: '10px', color: 'var(--primary-color)', fontFamily: 'var(--font-outfit), sans-serif', fontWeight: 800, letterSpacing: '-0.02em' }}>Acesse sua Conta</h1>
         <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '30px' }}>
           Escolha como deseja entrar na plataforma.
         </p>
@@ -92,7 +92,7 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+              style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', outline: 'none', transition: 'border-color 0.2s' }} 
             />
           </div>
           <div>
@@ -104,7 +104,7 @@ export default function Login() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+                style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', outline: 'none', transition: 'border-color 0.2s' }} 
               />
               <button 
                 type="button" 

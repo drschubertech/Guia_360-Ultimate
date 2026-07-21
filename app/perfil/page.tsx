@@ -123,7 +123,7 @@ export default function Perfil() {
           gap: 20px;
           margin-bottom: 40px;
           padding-bottom: 30px;
-          border-bottom: 1px solid #eaeaea;
+          border-bottom: 1px solid var(--border-color);
         }
         .perfil-title {
           display: flex;
@@ -144,6 +144,9 @@ export default function Perfil() {
             gap: 15px;
             align-items: flex-start;
           }
+          .perfil-actions {
+            display: none !important;
+          }
         }
       `}</style>
       <div className="container" style={{ maxWidth: '800px' }}>
@@ -152,7 +155,7 @@ export default function Perfil() {
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary-color)' }}>
             <User size={32} /> Meu Perfil
           </h1>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div className="perfil-actions" style={{ display: 'flex', gap: '10px' }}>
             {isAdmin && (
               <button onClick={() => router.push('/admin')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 'bold' }}>
                 Painel Admin
@@ -164,7 +167,7 @@ export default function Perfil() {
           </div>
         </div>
 
-        <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-md)', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+        <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-color)' }}>
           <div className="perfil-header">
             <div style={{ position: 'relative' }}>
               <div style={{ width: '100px', height: '100px', backgroundColor: 'var(--primary-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '2.5rem', fontWeight: 'bold', overflow: 'hidden' }}>
@@ -207,7 +210,7 @@ export default function Perfil() {
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
                   placeholder="Seu nome completo" 
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+                  style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} 
                 />
               </div>
               <div>
@@ -217,7 +220,7 @@ export default function Perfil() {
                   value={telefone}
                   onChange={(e) => setTelefone(e.target.value)}
                   placeholder="(00) 00000-0000" 
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+                  style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} 
                 />
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
@@ -227,7 +230,7 @@ export default function Perfil() {
                   value={endereco}
                   onChange={(e) => setEndereco(e.target.value)}
                   placeholder="Rua, Número, Bairro, Cidade" 
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+                  style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} 
                 />
               </div>
             </div>

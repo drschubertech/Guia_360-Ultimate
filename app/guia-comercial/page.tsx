@@ -17,9 +17,16 @@ function GuiaComercialContent() {
   useEffect(() => {
     async function carregarEmpresas() {
       try {
-        const { data, error } = await supabase.from('empresas').select('*');
-        if (error) throw error;
-        setEmpresas([...empresasMock, ...(data || [])]);
+        const { data: empData, error: empError } = await supabase.from('empresas').select('*');
+        if (empError) throw empError;
+        
+        const { data: entData, error: entError } = await supabase.from('entidades').select('*');
+        if (entError) throw entError;
+
+        const empresasFormatadas = (empData || []).map(e => ({ ...e, tipo: 'Empresa' }));
+        const entidadesFormatadas = (entData || []).map(e => ({ ...e, tipo: 'Entidade' }));
+        
+        setEmpresas([...empresasMock, ...empresasFormatadas, ...entidadesFormatadas]);
       } catch (error) {
         console.error('Erro ao buscar empresas:', error);
         setEmpresas(empresasMock);
@@ -90,20 +97,20 @@ function GuiaComercialContent() {
           }
         }
       `}</style>
-      <section style={{ backgroundColor: 'var(--bg-dark)', color: 'var(--bg-light)', padding: '60px 20px', textAlign: 'center' }}>
+      <section style={{ background: 'linear-gradient(135deg, var(--primary-light) 0%, var(--bg-offwhite) 100%)', color: 'var(--text-primary)', padding: '80px 20px 60px', textAlign: 'center', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
-          <h1 style={{ fontSize: '2rem', marginBottom: '20px' }}>
+          <h1 style={{ fontSize: '2.5rem', marginBottom: '20px', fontFamily: 'var(--font-outfit), sans-serif', fontWeight: 800, letterSpacing: '-0.03em' }}>
             {tipoFiltro === 'entidades' ? 'Guia de Entidades' : tipoFiltro === 'empresas' ? 'Guia de Empresas' : 'Guia Comercial'}
           </h1>
-          <p style={{ color: '#ccc', marginBottom: '30px' }}>Encontre os melhores serviços, comércios e entidades da cidade.</p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '40px', fontSize: '1.1rem' }}>Encontre os melhores serviços, comércios e entidades da cidade.</p>
           
-          <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', gap: '10px' }}>
+          <div style={{ maxWidth: '650px', margin: '0 auto', display: 'flex', gap: '12px', background: 'var(--bg-light)', padding: '8px', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-lg)' }}>
             <input 
               type="text" 
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Digite o nome da empresa, serviço ou entidade..." 
-              style={{ flex: 1, padding: '15px', border: 'none', borderRadius: 'var(--radius-sm)' }}
+              style={{ flex: 1, padding: '12px 20px', border: 'none', background: 'transparent', fontSize: '1.1rem', color: 'var(--text-primary)', outline: 'none' }}
             />
           </div>
         </div>
@@ -141,8 +148,8 @@ function GuiaComercialContent() {
           {/* Listagem de Empresas */}
           <div style={{ flex: 1, width: '100%' }}>
             <div className="guia-header">
-              <h2>Resultados ({empresasFiltradas.length})</h2>
-              <select style={{ padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid #ccc' }}>
+              <h2 style={{ fontFamily: 'var(--font-outfit), sans-serif', fontWeight: 700 }}>Resultados ({empresasFiltradas.length})</h2>
+              <select style={{ padding: '10px 15px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', outline: 'none', background: 'var(--bg-light)' }}>
                 <option>Relevância</option>
                 <option>Melhor Avaliação</option>
                 <option>Mais Recentes</option>

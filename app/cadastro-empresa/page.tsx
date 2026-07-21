@@ -167,10 +167,10 @@ export default function CadastroEmpresa() {
       if (authError) throw authError;
       const userId = authData.user?.id;
 
-      // 2. Inserir a empresa
-      const novaEmpresa = {
+      // 2. Inserir a empresa ou entidade
+      const payload = {
         user_id: userId,
-        nome: nomeEntidade || 'Empresa Sem Nome',
+        nome: nomeEntidade || (tipo === 'Empresa' ? 'Empresa Sem Nome' : 'Entidade Sem Nome'),
         slug,
         categoria: categoria || 'Serviços',
         tags: [],
@@ -184,12 +184,12 @@ export default function CadastroEmpresa() {
         instagram,
         facebook,
         reivindicada: true,
-        capa: finalCapaUrl || `https://via.placeholder.com/1200x400?text=${encodeURIComponent(nomeEntidade || 'Empresa')}`,
-        fotos_catalogo,
-        tipo
+        capa: finalCapaUrl || `https://via.placeholder.com/1200x400?text=${encodeURIComponent(nomeEntidade || tipo)}`,
+        fotos_catalogo
       };
 
-      const { error } = await supabase.from('empresas').insert([novaEmpresa]);
+      const tabelaDestino = tipo === 'Entidade' ? 'entidades' : 'empresas';
+      const { error } = await supabase.from(tabelaDestino).insert([payload]);
       if (error) throw error;
       
       alert('Cadastro enviado com sucesso para o banco de dados!');
@@ -227,9 +227,9 @@ export default function CadastroEmpresa() {
           }
         }
       `}</style>
-      <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-md)', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', width: '100%', maxWidth: '600px' }}>
+      <div style={{ backgroundColor: 'var(--bg-light)', padding: '40px', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '600px' }}>
         
-        <h1 style={{ textAlign: 'center', marginBottom: '10px', color: 'var(--primary-color)' }}>Anuncie Grátis</h1>
+        <h1 style={{ textAlign: 'center', marginBottom: '10px', color: 'var(--primary-color)', fontFamily: 'var(--font-outfit), sans-serif', fontWeight: 800, letterSpacing: '-0.02em' }}>Anuncie Grátis</h1>
         <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '30px' }}>
           Crie o perfil da sua {tipo.toLowerCase()} em 4 passos simples.
         </p>
@@ -241,7 +241,7 @@ export default function CadastroEmpresa() {
               width: '30px', 
               height: '30px', 
               borderRadius: '50%', 
-              backgroundColor: etapa >= step ? 'var(--primary-color)' : '#e0e0e0', 
+              backgroundColor: etapa >= step ? 'var(--primary-color)' : 'var(--border-color)', 
               color: '#fff', 
               display: 'flex', 
               alignItems: 'center', 
@@ -253,7 +253,7 @@ export default function CadastroEmpresa() {
             </div>
           ))}
           {/* Linha conectora */}
-          <div style={{ position: 'absolute', top: '15px', left: '15px', right: '15px', height: '2px', backgroundColor: '#e0e0e0', zIndex: 0 }} />
+          <div style={{ position: 'absolute', top: '15px', left: '15px', right: '15px', height: '2px', backgroundColor: 'var(--border-color)', zIndex: 0 }} />
         </div>
 
         {/* Formulário - Etapa Atual */}
@@ -281,13 +281,13 @@ export default function CadastroEmpresa() {
                   value={nomeEntidade}
                   onChange={(e) => setNomeEntidade(e.target.value)}
                   placeholder={`Ex: ${tipo === 'Empresa' ? 'Pizzaria do Mário' : 'Associação Bairro X'}`} 
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+                  style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} 
                 />
               </div>
               <div className="grid-2-col">
                 <div>
                   <label style={{ display: 'block', marginBottom: '5px' }}>Categoria</label>
-                  <select value={categoria} onChange={(e) => { setCategoria(e.target.value); setSubCategoria(''); }} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }}>
+                  <select value={categoria} onChange={(e) => { setCategoria(e.target.value); setSubCategoria(''); }} style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
                     <option value="">Selecione...</option>
                     {categoriasDb.filter(c => c.tipo === tipo).map(cat => (
                       <option key={cat.id} value={cat.nome}>{cat.nome}</option>
@@ -297,7 +297,7 @@ export default function CadastroEmpresa() {
                 {categoria && (
                   <div>
                     <label style={{ display: 'block', marginBottom: '5px' }}>Sub-categoria</label>
-                    <select value={subCategoria} onChange={(e) => setSubCategoria(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }}>
+                    <select value={subCategoria} onChange={(e) => setSubCategoria(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
                       <option value="">Selecione...</option>
                       {subcategoriasDb
                         .filter(s => {
@@ -324,7 +324,7 @@ export default function CadastroEmpresa() {
                   value={whatsapp}
                   onChange={handleWhatsapp}
                   placeholder="(00) 0 0000-0000" 
-                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+                  style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} 
                 />
               </div>
               <div>
@@ -337,28 +337,28 @@ export default function CadastroEmpresa() {
                       value={cep} 
                       onChange={handleCep} 
                       placeholder="00000-000" 
-                      style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+                      style={{ width: '100%', padding: '10px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} 
                     />
                   </div>
                   <div className="grid-cep-full">
                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>Rua</label>
-                    <input type="text" name="rua" value={endereco.rua} onChange={handleChangeEndereco} placeholder="Nome da rua" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="text" name="rua" value={endereco.rua} onChange={handleChangeEndereco} placeholder="Nome da rua" style={{ width: '100%', padding: '10px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>Número</label>
-                    <input type="text" name="numero" value={endereco.numero} onChange={handleChangeEndereco} placeholder="123" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="text" name="numero" value={endereco.numero} onChange={handleChangeEndereco} placeholder="123" style={{ width: '100%', padding: '10px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>Bairro</label>
-                    <input type="text" name="bairro" value={endereco.bairro} onChange={handleChangeEndereco} placeholder="Centro" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="text" name="bairro" value={endereco.bairro} onChange={handleChangeEndereco} placeholder="Centro" style={{ width: '100%', padding: '10px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>Cidade</label>
-                    <input type="text" name="cidade" value={endereco.cidade} onChange={handleChangeEndereco} placeholder="Sua Cidade" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="text" name="cidade" value={endereco.cidade} onChange={handleChangeEndereco} placeholder="Sua Cidade" style={{ width: '100%', padding: '10px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>UF</label>
-                    <input type="text" name="uf" value={endereco.uf} onChange={handleChangeEndereco} placeholder="SP" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="text" name="uf" value={endereco.uf} onChange={handleChangeEndereco} placeholder="SP" style={{ width: '100%', padding: '10px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                 </div>
               </div>
@@ -368,16 +368,16 @@ export default function CadastroEmpresa() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>Site</label>
-                    <input type="text" value={site} onChange={(e) => setSite(e.target.value)} placeholder="www.suaempresa.com.br" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="text" value={site} onChange={(e) => setSite(e.target.value)} placeholder="www.suaempresa.com.br" style={{ width: '100%', padding: '10px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                   <div className="grid-2-col">
                     <div>
                       <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>Instagram</label>
-                      <input type="text" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@seuinstagram" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                      <input type="text" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@seuinstagram" style={{ width: '100%', padding: '10px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} />
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '3px' }}>Facebook</label>
-                      <input type="text" value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="Link ou usuário" style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                      <input type="text" value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="Link ou usuário" style={{ width: '100%', padding: '10px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} />
                     </div>
                   </div>
                 </div>
@@ -396,7 +396,7 @@ export default function CadastroEmpresa() {
                 <h4 style={{ marginBottom: '15px' }}>Logo</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <label style={{ display: 'block', fontSize: '0.9rem' }}>URL da Imagem</label>
-                  <input type="text" value={fotoLogoUrl} onChange={(e) => setFotoLogoUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                  <input type="text" value={fotoLogoUrl} onChange={(e) => setFotoLogoUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '10px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} />
                   
                   <div style={{ margin: '10px 0', textAlign: 'center', fontWeight: 'bold' }}>OU</div>
                   
@@ -410,7 +410,7 @@ export default function CadastroEmpresa() {
                 <h4 style={{ marginBottom: '15px' }}>Foto de Capa</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <label style={{ display: 'block', fontSize: '0.9rem' }}>URL da Imagem (opcional se enviar arquivo)</label>
-                  <input type="text" value={fotoCapaUrl} onChange={(e) => setFotoCapaUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                  <input type="text" value={fotoCapaUrl} onChange={(e) => setFotoCapaUrl(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '10px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} />
                   
                   <div style={{ margin: '10px 0', textAlign: 'center', fontWeight: 'bold' }}>OU</div>
                   
@@ -432,7 +432,7 @@ export default function CadastroEmpresa() {
                         const newUrls = [...fotosCatalogoUrl];
                         newUrls[index] = e.target.value;
                         setFotosCatalogoUrl(newUrls);
-                      }} placeholder="URL da imagem" style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)', marginBottom: '10px', fontSize: '0.8rem' }} />
+                      }} placeholder="URL da imagem" style={{ width: '100%', padding: '8px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', marginBottom: '10px', fontSize: '0.8rem' }} />
                       
                       <input type="file" accept="image/*" onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
@@ -456,11 +456,11 @@ export default function CadastroEmpresa() {
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Os dados do administrador da empresa</p>
               <div>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Nome Completo</label>
-                <input type="text" value={nomeAdmin} onChange={(e) => setNomeAdmin(e.target.value)} placeholder="Seu nome completo" style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                <input type="text" value={nomeAdmin} onChange={(e) => setNomeAdmin(e.target.value)} placeholder="Seu nome completo" style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '5px' }}>E-mail para Login</label>
-                <input type="email" value={emailAdmin} onChange={(e) => setEmailAdmin(e.target.value)} placeholder="seu@email.com" style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} />
+                <input type="email" value={emailAdmin} onChange={(e) => setEmailAdmin(e.target.value)} placeholder="seu@email.com" style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '5px' }}>Senha</label>
@@ -470,7 +470,7 @@ export default function CadastroEmpresa() {
                     value={senhaAdmin}
                     onChange={(e) => setSenhaAdmin(e.target.value)}
                     placeholder="••••••••" 
-                    style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)' }} 
+                    style={{ width: '100%', padding: '12px', paddingRight: '40px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }} 
                   />
                   <button 
                     type="button" 
@@ -490,7 +490,7 @@ export default function CadastroEmpresa() {
           {etapa > 1 ? (
             <button 
               onClick={() => setEtapa(etapa - 1)} 
-              style={{ padding: '10px 20px', border: '1px solid #ccc', background: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>
+              style={{ padding: '10px 20px', border: '1px solid var(--border-color)', background: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>
               Voltar
             </button>
           ) : (
