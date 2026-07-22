@@ -7,16 +7,19 @@ import PostCard from '../components/PostCard/PostCard';
 import CompanyCard from '../components/CompanyCard/CompanyCard';
 import Link from 'next/link';
 import { supabase } from '../lib/supabase';
-import { Car, Smile, ShoppingBag, Armchair, Utensils, Home as HomeIcon, Shirt, Dog, Bike } from 'lucide-react';
+import { Car, Smile, ShoppingBag, Armchair, Utensils, Home as HomeIcon, Shirt, Dog, Bike, Search, X } from 'lucide-react';
 
 const IconMap: Record<string, React.ElementType> = {
   Car, Smile, ShoppingBag, Armchair, Utensils, Home: HomeIcon, Shirt, Dog, Bike, Motorbike: Bike, motorbike: Bike
 };
 
+const POPULAR_TAGS = ['Restaurantes', 'Farmácias', 'Oficinas', 'Eventos'];
+
 export default function Home() {
   const [empresas, setEmpresas] = useState<any[]>([]);
   const [noticias, setNoticias] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     async function carregarDados() {
@@ -46,18 +49,63 @@ export default function Home() {
     carregarDados();
   }, []);
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      window.location.href = `/guia-comercial?q=${encodeURIComponent(searchTerm.trim())}`;
+    }
+  };
+
+  const handleTagClick = (tag: string) => {
+    setSearchTerm(tag);
+    window.location.href = `/guia-comercial?q=${encodeURIComponent(tag)}`;
+  };
+
   return (
     <main className={styles.main}>
       <section className={styles.hero}>
         <div className="container">
           <h1 className={styles.title}>Explore a <span>sua cidade!</span></h1>
-          <div className={styles.searchBox}>
-            <input
-              type="text"
-              placeholder="O que você está procurando?"
-              className={styles.searchInput}
-            />
-            <button className="btn-theme btn-pill" style={{ padding: '0 32px', fontSize: '1rem', letterSpacing: '0.02em' }}>Buscar</button>
+          
+          <form onSubmit={handleSearchSubmit} className={styles.searchBox}>
+            <div className={styles.searchInputWrapper}>
+              <Search className={styles.searchIcon} size={20} />
+              <input
+                type="text"
+                placeholder="O que você está procurando?"
+                className={styles.searchInput}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  className={styles.clearButton}
+                  onClick={() => setSearchTerm('')}
+                  aria-label="Limpar busca"
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+            <button type="submit" className={styles.searchButton}>
+              <Search size={18} />
+              <span className={styles.searchButtonText}>Buscar</span>
+            </button>
+          </form>
+
+          <div className={styles.searchTags}>
+            <span className={styles.searchTagsLabel}>Populares:</span>
+            {POPULAR_TAGS.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                className={styles.tagChip}
+                onClick={() => handleTagClick(tag)}
+              >
+                {tag}
+              </button>
+            ))}
           </div>
 
           <div className={styles.categoriesWrapper}>
@@ -66,7 +114,7 @@ export default function Home() {
               return (
                 <Link href={`/guia-comercial?categoria=${cat.slug}`} key={cat.id} className={styles.categoryButton}>
                   <div className={styles.categoryIconBox} style={{ backgroundColor: cat.cor || 'var(--primary-color)' }}>
-                    {Icon && <Icon size={32} strokeWidth={1.5} />}
+                    {Icon && <Icon size={18} strokeWidth={2} />}
                   </div>
                   <span className={styles.categoryLabel}>{cat.nome}</span>
                 </Link>
