@@ -14,11 +14,6 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Não renderiza o Header público nas rotas administrativas
-  if (pathname?.startsWith('/admin')) {
-    return null;
-  }
-
   const checkAdmin = async (userId: string) => {
     try {
       const { data: profile } = await supabase.from('profiles').select('role_id').eq('id', userId).single();
@@ -66,6 +61,11 @@ export default function Header() {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  // Não renderiza o Header público nas rotas administrativas
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <header className={styles.header}>
       {/* Top Bar (Opcional - Conforme Diretrizes) */}
@@ -93,6 +93,7 @@ export default function Header() {
           <nav className={`${styles.nav} ${isMenuOpen ? styles.navOpen : ''}`}>
             <Link href="/" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Início</Link>
             <Link href="/guia-comercial" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Guia Comercial</Link>
+            <Link href="/noticias" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Notícias</Link>
             <Link href="/guia-comercial?tipo=empresas" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Empresas</Link>
             <Link href="/guia-comercial?tipo=entidades" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Entidades</Link>
             

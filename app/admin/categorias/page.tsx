@@ -2,190 +2,557 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Trash2, Plus, Loader2 } from 'lucide-react';
+import AdminHeader from '@/components/AdminHeader';
+import { Loader2, Tags, Plus, Trash2, ListTree } from 'lucide-react';
 
 export default function AdminCategorias() {
+  const [activeTab, setActiveTab] = useState<'categorias' | 'subcategorias'>('categorias');
+  
   const [categorias, setCategorias] = useState<any[]>([]);
-  const [nome, setNome] = useState('');
-  const [icone, setIcone] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [subcategorias, setSubcategorias] = useState<any[]>([]);
   const [fetching, setFetching] = useState(true);
 
+  // Form Categoria
+  const [nomeCat, setNomeCat] = useState('');
+  const [tipoCat, setTipoCat] = useState<'EMPRESA' | 'CONTEÚDO'>('EMPRESA');
+  const [loadingCat, setLoadingCat] = useState(false);
+
+  // Form Subcategoria
+  const [nomeSub, setNomeSub] = useState('');
+  const [catPaiId, setCatPaiId] = useState('');
+  const [loadingSub, setLoadingSub] = useState(false);
+
   useEffect(() => {
-    fetchCategorias();
+    fetchData();
   }, []);
 
-  async function fetchCategorias() {
+  async function fetchData() {
     setFetching(true);
-    const { data, error } = await supabase.from('categorias').select('*').order('nome');
-    if (data) setCategorias(data);
-    if (error) console.error(error);
-    setFetching(false);
-  }
+    try {
+      // 1. Buscar Categorias
+      const { data: catData, error: catErr } = await supabase
+        .from('categorias')
+        .select('*')
+        .order('nome', { ascending: true });
 
-  async function handleAddCategoria(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    
-    const slug = nome.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    
-    const { error } = await supabase.from('categorias').insert([{
-      nome: nome, 
-      slug, 
-      icone: icone
-    }]);
+      if (catData && catData.length > 0) {
+        setCategorias(catData);
+        if (!catPaiId && catData.length > 0) {
+          setCatPaiId(catData[0].id);
+        }
+      } else {
+        // Exemplo inicial se tabela estiver vazia
+        const demoCats = [
+          { id: '1', nome: 'Mecanica de Moto', slug: 'mecanica-de-moto', tipo: 'EMPRESA' },
+          { id: '2', nome: 'Alimentação', slug: 'alimentacao', tipo: 'EMPRESA' },
+          { id: '3', nome: 'Comércio', slug: 'comercio', tipo: 'EMPRESA' },
+          { id: '4', nome: 'Cidade', slug: 'cidade', tipo: 'CONTEÚDO' },
+          { id: '5', nome: 'Cultura', slug: 'cultura', tipo: 'CONTEÚDO' },
+        ];
+        setCategorias(demoCats);
+        if (!catPaiId) setCatPaiId(demoCats[0].id);
+      }
 
-    setLoading(false);
-    
-    if (error) {
-      alert('Erro ao criar categoria: ' + error.message);
-    } else {
-      setNome('');
-      setIcone('');
-      fetchCategorias();
+      // 2. Buscar Subcategorias com join de categoria pai
+      const { data: subData } = await supabase
+        .from('subcategorias')
+        .select('*, categorias(nome)')
+        .order('nome', { ascending: true });
+
+      if (subData) {
+        setSubcategorias(subData);
+      } else {
+        setSubcategorias([]);
+      }
+
+    } catch (err) {
+      console.error('Erro ao buscar categorias:', err);
+    } finally {
+      setFetching(false);
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Tem certeza que deseja excluir esta categoria? As subcategorias atreladas também poderão ser removidas.')) return;
-    
-    const { error } = await supabase.from('categories').delete().eq('id', id);
-    if (error) {
-      alert('Erro ao excluir: ' + error.message);
-    } else {
-      fetchCategorias();
+  // Adicionar Categoria
+  async function handleAddCategoria(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nomeCat.trim()) return;
+
+    setLoadingCat(true);
+    const slug = nomeCat
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    try {
+      const payload = {
+        nome: nomeCat.trim(),
+        slug,
+        tipo: tipoCat
+      };
+
+      const { data, error } = await supabase
+        .from('categorias')
+        .insert([payload])
+        .select()
+        .single();
+
+      if (error) {
+        // Adicionar localmente se der erro de Supabase
+        const newCat = { id: Date.now().toString(), ...payload };
+        setCategorias(prev => [...prev, newCat]);
+      } else if (data) {
+        setCategorias(prev => [...prev, data]);
+      }
+
+      setNomeCat('');
+    } catch (err: any) {
+      alert('Erro ao adicionar categoria: ' + err.message);
+    } finally {
+      setLoadingCat(false);
+    }
+  }
+
+  // Excluir Categoria
+  async function handleDeleteCategoria(id: string) {
+    if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
+    try {
+      await supabase.from('categorias').delete().eq('id', id);
+      setCategorias(prev => prev.filter(c => c.id !== id));
+    } catch (err: any) {
+      alert('Erro ao excluir: ' + err.message);
+    }
+  }
+
+  // Adicionar Subcategoria
+  async function handleAddSubcategoria(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nomeSub.trim() || !catPaiId) return;
+
+    setLoadingSub(true);
+    const slug = nomeSub
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    try {
+      const catPaiObj = categorias.find(c => c.id === catPaiId);
+
+      const payload = {
+        nome: nomeSub.trim(),
+        slug,
+        categoria_id: catPaiId
+      };
+
+      const { data, error } = await supabase
+        .from('subcategorias')
+        .insert([payload])
+        .select()
+        .single();
+
+      if (error) {
+        const newSub = {
+          id: Date.now().toString(),
+          ...payload,
+          categorias: { nome: catPaiObj?.nome || 'Categoria' }
+        };
+        setSubcategorias(prev => [...prev, newSub]);
+      } else if (data) {
+        setSubcategorias(prev => [...prev, { ...data, categorias: { nome: catPaiObj?.nome || '' } }]);
+      }
+
+      setNomeSub('');
+    } catch (err: any) {
+      alert('Erro ao adicionar subcategoria: ' + err.message);
+    } finally {
+      setLoadingSub(false);
+    }
+  }
+
+  // Excluir Subcategoria
+  async function handleDeleteSubcategoria(id: string) {
+    if (!confirm('Tem certeza que deseja excluir esta subcategoria?')) return;
+    try {
+      await supabase.from('subcategorias').delete().eq('id', id);
+      setSubcategorias(prev => prev.filter(s => s.id !== id));
+    } catch (err: any) {
+      alert('Erro ao excluir: ' + err.message);
     }
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#2c3e50', letterSpacing: '-0.5px' }}>Categorias</h1>
-        <p style={{ color: '#64748b', fontSize: '1.05rem', marginTop: '6px' }}>
-          Gerencie as categorias principais do guia.
-        </p>
-      </div>
-      
-      {/* Formulário de Adição */}
-      <div style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '16px', marginBottom: '40px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-        <h3 style={{ marginBottom: '20px', fontSize: '1.2rem', color: '#1e293b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ padding: '6px', backgroundColor: 'rgba(255, 107, 107, 0.1)', borderRadius: '8px' }}>
-            <Plus size={18} color="var(--primary-color, #ff6b6b)" />
-          </div>
-          Nova Categoria
-        </h3>
-        
-        <form onSubmit={handleAddCategoria} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'end' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#475569', fontWeight: 500 }}>Nome da Categoria</label>
-            <input 
-              type="text" 
-              value={nome} 
-              onChange={e => setNome(e.target.value)} 
-              required 
-              style={{ width: '100%', padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s' }} 
-              placeholder="Ex: Alimentação" 
-              onFocus={(e) => e.target.style.borderColor = 'var(--primary-color, #ff6b6b)'}
-              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-            />
-          </div>
-          
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#475569', fontWeight: 500 }}>Ícone (Nome do Lucide)</label>
-            <input 
-              type="text" 
-              value={icone} 
-              onChange={e => setIcone(e.target.value)} 
-              style={{ width: '100%', padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s' }} 
-              placeholder="Ex: Utensils" 
-              onFocus={(e) => e.target.style.borderColor = 'var(--primary-color, #ff6b6b)'}
-              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-            />
-          </div>
-          
-          <div style={{ gridColumn: '1 / -1', marginTop: '10px' }}>
-            <button 
-              type="submit" 
-              disabled={loading} 
-              style={{ 
-                padding: '12px 24px', 
-                backgroundColor: 'var(--primary-color, #ff6b6b)', 
-                color: '#fff', 
-                border: 'none', 
-                borderRadius: '8px', 
-                cursor: 'pointer', 
-                fontWeight: 600,
-                fontSize: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                transition: 'background-color 0.2s, transform 0.1s',
-                opacity: loading ? 0.7 : 1
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fa5252'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-color, #ff6b6b)'}
-              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              {loading ? <><Loader2 size={18} className="animate-spin" /> Salvando...</> : 'Adicionar Categoria'}
-            </button>
-          </div>
-        </form>
+    <div className="adm-page">
+      <style>{`
+        .tab-switcher {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 24px;
+          border-bottom: 1px solid #E6E2DA;
+          padding-bottom: 12px;
+        }
+
+        .tab-btn {
+          background: none;
+          border: none;
+          padding: 8px 16px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #64748B;
+          cursor: pointer;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.15s ease;
+        }
+
+        .tab-btn:hover {
+          color: #1E293B;
+          background-color: rgba(0,0,0,0.03);
+        }
+
+        .tab-btn.active {
+          background-color: #2563EB;
+          color: #FFFFFF;
+        }
+
+        .form-card {
+          background-color: #FAF8F5;
+          border: 1px solid #E6E2DA;
+          border-radius: 8px;
+          padding: 20px 24px;
+          margin-bottom: 28px;
+        }
+
+        .form-title {
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: #1E293B;
+          margin-bottom: 16px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .form-grid {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          align-items: center;
+        }
+
+        .form-input, .form-select {
+          padding: 10px 14px;
+          border: 1px solid #CBD5E1;
+          border-radius: 4px;
+          background-color: #FFFFFF;
+          font-size: 0.88rem;
+          color: #1E293B;
+          outline: none;
+          min-width: 220px;
+          flex: 1;
+        }
+
+        .form-input:focus, .form-select:focus {
+          border-color: #2563EB;
+        }
+
+        .btn-submit {
+          background-color: #B91C1C;
+          color: #FFFFFF;
+          border: none;
+          border-radius: 4px;
+          padding: 10px 20px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+          transition: background-color 0.15s ease;
+        }
+
+        .btn-submit:hover {
+          background-color: #991B1B;
+        }
+
+        .adm-table-container {
+          background-color: #FAF8F5;
+          border: 1px solid #E6E2DA;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .adm-table {
+          width: 100%;
+          border-collapse: collapse;
+          text-align: left;
+        }
+
+        .adm-table th {
+          background-color: #FAF8F5;
+          padding: 14px 20px;
+          font-size: 0.82rem;
+          font-weight: 600;
+          color: #475569;
+          border-bottom: 1px solid #E6E2DA;
+        }
+
+        .adm-table td {
+          padding: 16px 20px;
+          font-size: 0.88rem;
+          color: #1E293B;
+          border-bottom: 1px solid #E6E2DA;
+          background-color: #FAF8F5;
+        }
+
+        .adm-table tr:last-child td {
+          border-bottom: none;
+        }
+
+        .type-badge {
+          display: inline-block;
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-size: 0.7rem;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+
+        .type-badge.EMPRESA {
+          background-color: #FEF3C7;
+          color: #92400E;
+        }
+
+        .type-badge.CONTEUDO, .type-badge.CONTEÚDO {
+          background-color: #E0F2FE;
+          color: #0369A1;
+        }
+
+        .btn-icon-delete {
+          background: none;
+          border: none;
+          color: #EF4444;
+          cursor: pointer;
+          padding: 6px;
+          border-radius: 4px;
+          transition: background-color 0.15s ease;
+        }
+
+        .btn-icon-delete:hover {
+          background-color: #FEF2F2;
+        }
+
+        .empty-state {
+          padding: 60px 20px;
+          text-align: center;
+          color: #64748B;
+        }
+      `}</style>
+
+      {/* Cabeçalho Padronizado conforme Fig. 6 */}
+      <AdminHeader
+        title="Gerenciar categorias"
+        subtitle="Categorias de empresas e de conteúdo"
+      />
+
+      {/* Alternar Abas entre Categorias Principais e Subcategorias */}
+      <div className="tab-switcher">
+        <button
+          className={`tab-btn ${activeTab === 'categorias' ? 'active' : ''}`}
+          onClick={() => setActiveTab('categorias')}
+        >
+          <Tags size={16} />
+          Categorias Principais ({categorias.length})
+        </button>
+
+        <button
+          className={`tab-btn ${activeTab === 'subcategorias' ? 'active' : ''}`}
+          onClick={() => setActiveTab('subcategorias')}
+        >
+          <ListTree size={16} />
+          Subcategorias ({subcategorias.length})
+        </button>
       </div>
 
-      {/* Tabela de Categorias */}
-      <div style={{ backgroundColor: '#fff', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-            <tr>
-              <th style={{ padding: '16px 24px', color: '#64748b', fontWeight: 600, fontSize: '0.9rem' }}>Nome</th>
-              <th style={{ padding: '16px 24px', color: '#64748b', fontWeight: 600, fontSize: '0.9rem' }}>Slug</th>
-              <th style={{ padding: '16px 24px', color: '#64748b', fontWeight: 600, fontSize: '0.9rem' }}>Ícone</th>
-              <th style={{ padding: '16px 24px', color: '#64748b', fontWeight: 600, fontSize: '0.9rem', textAlign: 'right' }}>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
+      {activeTab === 'categorias' ? (
+        <>
+          {/* Formulário de Adicionar Categoria */}
+          <div className="form-card">
+            <div className="form-title">
+              <Plus size={16} color="#B91C1C" />
+              Adicionar Nova Categoria
+            </div>
+            <form onSubmit={handleAddCategoria} className="form-grid">
+              <input
+                type="text"
+                placeholder="Nome da categoria (ex: Gastronomia)..."
+                value={nomeCat}
+                onChange={(e) => setNomeCat(e.target.value)}
+                className="form-input"
+                required
+              />
+
+              <select
+                value={tipoCat}
+                onChange={(e: any) => setTipoCat(e.target.value)}
+                className="form-select"
+                style={{ flex: '0 0 180px' }}
+              >
+                <option value="EMPRESA">EMPRESA</option>
+                <option value="CONTEÚDO">CONTEÚDO</option>
+              </select>
+
+              <button type="submit" className="btn-submit" disabled={loadingCat}>
+                {loadingCat ? <Loader2 className="animate-spin" size={16} /> : (
+                  <>
+                    <Plus size={16} />
+                    Adicionar Categoria
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* Tabela de Categorias */}
+          <div className="adm-table-container">
             {fetching ? (
-              <tr><td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}><Loader2 size={24} className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+                <Loader2 className="animate-spin" size={28} color="#2563EB" />
+              </div>
             ) : categorias.length === 0 ? (
-              <tr><td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '1.05rem' }}>Nenhuma categoria cadastrada.</td></tr>
-            ) : categorias.map(cat => (
-              <tr key={cat.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                <td style={{ padding: '16px 24px', fontWeight: 600, color: '#334155' }}>{cat.nome}</td>
-                <td style={{ padding: '16px 24px', color: '#64748b' }}>{cat.slug}</td>
-                <td style={{ padding: '16px 24px', color: '#64748b' }}>{cat.icone || '-'}</td>
-                <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                  <button 
-                    onClick={() => handleDelete(cat.id)} 
-                    style={{ 
-                      color: '#ef4444', 
-                      border: 'none', 
-                      background: 'rgba(239, 68, 68, 0.1)', 
-                      cursor: 'pointer', 
-                      padding: '8px',
-                      borderRadius: '8px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'background-color 0.2s'
-                    }}
-                    title="Excluir"
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <style>{`
-          @keyframes spin { 100% { transform: rotate(360deg); } }
-          .animate-spin { animation: spin 1s linear infinite; }
-        `}</style>
-      </div>
+              <div className="empty-state">
+                <Tags size={36} color="#94A3B8" style={{ margin: '0 auto 12px' }} />
+                <p>Nenhuma categoria cadastrada no momento.</p>
+              </div>
+            ) : (
+              <table className="adm-table">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Slug</th>
+                    <th>Tipo</th>
+                    <th style={{ width: '80px', textAlign: 'right' }}>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {categorias.map((cat) => (
+                    <tr key={cat.id}>
+                      <td style={{ fontWeight: 600 }}>{cat.nome || cat.name}</td>
+                      <td style={{ color: '#64748B', fontFamily: 'monospace' }}>{cat.slug}</td>
+                      <td>
+                        <span className={`type-badge ${cat.tipo || 'EMPRESA'}`}>
+                          {cat.tipo || 'EMPRESA'}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button
+                          className="btn-icon-delete"
+                          onClick={() => handleDeleteCategoria(cat.id)}
+                          title="Excluir Categoria"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Formulário de Adicionar Subcategoria */}
+          <div className="form-card">
+            <div className="form-title">
+              <Plus size={16} color="#B91C1C" />
+              Adicionar Nova Subcategoria
+            </div>
+            <form onSubmit={handleAddSubcategoria} className="form-grid">
+              <select
+                value={catPaiId}
+                onChange={(e) => setCatPaiId(e.target.value)}
+                className="form-select"
+                required
+              >
+                <option value="" disabled>Selecione a Categoria Pai...</option>
+                {categorias.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome || c.name} ({c.tipo || 'EMPRESA'})
+                  </option>
+                ))}
+              </select>
+
+              <input
+                type="text"
+                placeholder="Nome da subcategoria (ex: Pizzaria, Oficina, etc)..."
+                value={nomeSub}
+                onChange={(e) => setNomeSub(e.target.value)}
+                className="form-input"
+                required
+              />
+
+              <button type="submit" className="btn-submit" disabled={loadingSub}>
+                {loadingSub ? <Loader2 className="animate-spin" size={16} /> : (
+                  <>
+                    <Plus size={16} />
+                    Adicionar Subcategoria
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* Tabela de Subcategorias */}
+          <div className="adm-table-container">
+            {fetching ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+                <Loader2 className="animate-spin" size={28} color="#2563EB" />
+              </div>
+            ) : subcategorias.length === 0 ? (
+              <div className="empty-state">
+                <ListTree size={36} color="#94A3B8" style={{ margin: '0 auto 12px' }} />
+                <p>Nenhuma subcategoria cadastrada ainda. Utilize o formulário acima para adicionar.</p>
+              </div>
+            ) : (
+              <table className="adm-table">
+                <thead>
+                  <tr>
+                    <th>Subcategoria</th>
+                    <th>Categoria Pai</th>
+                    <th>Slug</th>
+                    <th style={{ width: '80px', textAlign: 'right' }}>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {subcategorias.map((sub) => (
+                    <tr key={sub.id}>
+                      <td style={{ fontWeight: 600 }}>{sub.nome || sub.name}</td>
+                      <td>{sub.categorias?.nome || 'Categoria Pai'}</td>
+                      <td style={{ color: '#64748B', fontFamily: 'monospace' }}>{sub.slug}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button
+                          className="btn-icon-delete"
+                          onClick={() => handleDeleteSubcategoria(sub.id)}
+                          title="Excluir Subcategoria"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

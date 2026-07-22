@@ -8,6 +8,12 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "93f53fd1c0352d3d7ec17b8f73d7351bf76f4821e55d123c9d2abc2c53ba48e4"
     },
+    "refactoring-expert": {
+      "source": "cin12211/orca-q",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/refactoring-expert/SKILL.md",
+      "computedHash": "c99bc2007a0407905f46f8956b3b6e177a14f86f50266da120013cb49194529c"
+    },
     "tailwindcss-mobile-first": {
       "source": "josiahsiegel/claude-plugin-marketplace",
       "sourceType": "github",
