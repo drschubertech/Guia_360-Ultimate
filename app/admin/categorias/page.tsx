@@ -128,44 +128,54 @@ export default function AdminCategorias() {
   // Adicionar Subcategoria
   async function handleAddSubcategoria(e: React.FormEvent) {
     e.preventDefault();
-    if (!nomeSub.trim() || !catPaiId) return;
+    if (!nomeSub.trim()) {
+      alert('Por favor, informe o nome da subcategoria.');
+      return;
+    }
+    if (!catPaiId) {
+      alert('Por favor, selecione uma Categoria Pai.');
+      return;
+    }
 
     setLoadingSub(true);
-    const slug = nomeSub
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
 
     try {
       const catPaiObj = categorias.find(c => c.id === catPaiId);
 
       const payload = {
         nome: nomeSub.trim(),
-        slug,
         categoria_id: catPaiId
       };
 
       const { data, error } = await supabase
         .from('subcategorias')
         .insert([payload])
-        .select()
+        .select('*, categorias(nome)')
         .single();
 
       if (error) {
+        console.error('Erro ao salvar subcategoria no Supabase:', error);
+        alert('Erro ao salvar subcategoria: ' + (error.message || 'Verifique se a tabela subcategorias existe no Supabase.'));
+        
+        // Fallback local caso o Supabase falhe
         const newSub = {
           id: Date.now().toString(),
           ...payload,
           categorias: { nome: catPaiObj?.nome || 'Categoria' }
         };
-        setSubcategorias(prev => [...prev, newSub]);
-      } else if (data) {
-        setSubcategorias(prev => [...prev, { ...data, categorias: { nome: catPaiObj?.nome || '' } }]);
+        setSubcategorias(prev => [newSub, ...prev]);
+      } else {
+        const itemAdicionado = data || {
+          id: Date.now().toString(),
+          ...payload,
+          categorias: { nome: catPaiObj?.nome || 'Categoria' }
+        };
+        setSubcategorias(prev => [itemAdicionado, ...prev]);
+        alert(`Subcategoria "${nomeSub.trim()}" adicionada com sucesso!`);
+        setNomeSub('');
       }
-
-      setNomeSub('');
     } catch (err: any) {
+      console.error('Erro inesperado:', err);
       alert('Erro ao adicionar subcategoria: ' + err.message);
     } finally {
       setLoadingSub(false);
@@ -526,7 +536,6 @@ export default function AdminCategorias() {
                   <tr>
                     <th>Subcategoria</th>
                     <th>Categoria Pai</th>
-                    <th>Slug</th>
                     <th style={{ width: '80px', textAlign: 'right' }}>Ações</th>
                   </tr>
                 </thead>
@@ -535,7 +544,6 @@ export default function AdminCategorias() {
                     <tr key={sub.id}>
                       <td style={{ fontWeight: 600 }}>{sub.nome || sub.name}</td>
                       <td>{sub.categorias?.nome || 'Categoria Pai'}</td>
-                      <td style={{ color: '#64748B', fontFamily: 'monospace' }}>{sub.slug}</td>
                       <td style={{ textAlign: 'right' }}>
                         <button
                           className="btn-icon-delete"

@@ -150,12 +150,13 @@ export default function CadastroEmpresa() {
         nome: nomeEntidade || (tipo === 'Empresa' ? 'Empresa Sem Nome' : 'Entidade Sem Nome'),
         slug,
         categoria: categoria || 'Serviços',
+        subcategoria: subCategoria || null,
         tags: [],
         descricao: 'Descrição pendente.',
         avaliacao: 0,
         telefone: whatsapp,
         endereco: `${endereco.rua}, ${endereco.numero} - ${endereco.bairro}`,
-        horario_funcionamento: horarioFuncionamento,
+        horario: horarioFuncionamento,
         status: 'fechado',
         logo: finalLogoUrl,
         site,
@@ -834,7 +835,7 @@ export default function CadastroEmpresa() {
                     className="emp-select"
                   >
                     <option value="">Selecione...</option>
-                    {categoriasDb.filter(c => c.tipo === tipo).map(cat => (
+                    {categoriasDb.filter(c => !c.tipo || c.tipo.toUpperCase() === tipo.toUpperCase()).map(cat => (
                       <option key={cat.id} value={cat.nome}>{cat.nome}</option>
                     ))}
                   </select>
@@ -850,7 +851,7 @@ export default function CadastroEmpresa() {
                       <option value="">Selecione...</option>
                       {subcategoriasDb
                         .filter(s => {
-                          const catSelecionada = categoriasDb.find(c => c.nome === categoria && c.tipo === tipo);
+                          const catSelecionada = categoriasDb.find(c => c.nome === categoria && (!c.tipo || c.tipo.toUpperCase() === tipo.toUpperCase()));
                           return catSelecionada && s.categoria_id === catSelecionada.id;
                         })
                         .map(sub => (

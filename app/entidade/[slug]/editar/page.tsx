@@ -105,7 +105,7 @@ export default function EditarEntidade({ params }: { params: { slug: string } })
         descricao,
         telefone,
         endereco,
-        horario_funcionamento: horarioFuncionamento,
+        horario: horarioFuncionamento,
         site,
         instagram,
         facebook,

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import AdminHeader from '@/components/AdminHeader';
-import { Loader2, Users } from 'lucide-react';
+import { Loader2, Users, Trash2 } from 'lucide-react';
 
 export default function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState<any[]>([]);
@@ -21,23 +21,8 @@ export default function AdminUsuarios() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (data && data.length > 0) {
+      if (data) {
         setUsuarios(data);
-      } else {
-        // Dados de demonstração alinhados com a Imagem 5
-        setUsuarios([
-          { id: '1', nome: 'Fulano deTal', email: 'fulano@teste.com', tipo: 'ENTIDADE' },
-          { id: '2', nome: 'bilbi', email: 'bilbi@teste.com', tipo: 'EMPRESA' },
-          { id: '3', nome: 'Empresa teste', email: 'teste4@teste.com', tipo: 'EMPRESA' },
-          { id: '4', nome: 'Sousa Marques', email: 'teste3@teste.com', tipo: 'EMPRESA' },
-          { id: '5', nome: 'Teste Cadastro Entidade', email: 'teste2@teste.com', tipo: 'ENTIDADE' },
-          { id: '6', nome: 'Daniel Rubens', email: 'drschubertech@gmail.com', tipo: 'ADMIN' },
-          { id: '7', nome: 'Daniel Rubens', email: 'teste@teste.com', tipo: 'ENTIDADE' },
-          { id: '8', nome: 'Paulinho', email: 'ibr@teste.com', tipo: 'ENTIDADE' },
-          { id: '9', nome: 'Daniel Rubens Schubert', email: 'dr_schubert@hotmail.com', tipo: 'ENTIDADE' },
-          { id: '10', nome: 'Daniel Rubens', email: 'danielrschubert@gmail.com', tipo: 'ENTIDADE' },
-          { id: '11', nome: 'Daniel Rubens Schubert', email: 'schubertech@gmail.com', tipo: 'ADMIN' },
-        ]);
       }
     } catch (err) {
       console.error('Erro ao buscar usuários:', err);
@@ -45,6 +30,27 @@ export default function AdminUsuarios() {
       setFetching(false);
     }
   }
+
+  const handleDelete = async (id: string) => {
+    const confirmar = window.confirm("Tem certeza que deseja deletar este usuário?");
+    if (!confirmar) return;
+
+    try {
+      // Deleta o perfil (se houver gatilho de cascade, apagará o auth.users também, ou vice-versa, dependendo da configuração do banco)
+      const { error } = await supabase.from('profiles').delete().eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      alert("Usuário deletado com sucesso!");
+      // Atualiza a lista removendo o usuário deletado
+      setUsuarios(usuarios.filter(u => u.id !== id));
+    } catch (err: any) {
+      console.error('Erro ao deletar usuário:', err);
+      alert("Erro ao deletar usuário: " + err.message);
+    }
+  };
 
   return (
     <div className="adm-page">
@@ -109,11 +115,33 @@ export default function AdminUsuarios() {
           background-color: #FEF3C7;
           color: #92400E;
         }
+        
+        .role-badge.USUARIO {
+          background-color: #F3E8FF;
+          color: #6B21A8;
+        }
 
         .empty-state {
           padding: 60px 20px;
           text-align: center;
           color: #64748B;
+        }
+
+        .btn-delete {
+          background: none;
+          border: none;
+          color: #EF4444;
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 0.2s;
+        }
+
+        .btn-delete:hover {
+          background-color: #FEE2E2;
         }
       `}</style>
 
@@ -139,7 +167,9 @@ export default function AdminUsuarios() {
               <tr>
                 <th>Nome</th>
                 <th>E-mail</th>
+                <th>Contato</th>
                 <th>Tipo</th>
+                <th style={{ textAlign: 'center', width: '80px' }}>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -147,10 +177,20 @@ export default function AdminUsuarios() {
                 <tr key={u.id}>
                   <td style={{ fontWeight: 600 }}>{u.nome || u.full_name || u.name || 'Sem nome'}</td>
                   <td>{u.email || u.user_email || '-'}</td>
+                  <td>{u.telefone || u.contato || u.phone || '-'}</td>
                   <td>
-                    <span className={`role-badge ${u.tipo || u.role || 'ENTIDADE'}`}>
-                      {u.tipo || u.role || 'ENTIDADE'}
+                    <span className={`role-badge ${u.tipo || u.role || 'USUARIO'}`}>
+                      {u.tipo || u.role || 'USUARIO'}
                     </span>
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <button 
+                      className="btn-delete" 
+                      onClick={() => handleDelete(u.id)}
+                      title="Deletar Usuário"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </td>
                 </tr>
               ))}

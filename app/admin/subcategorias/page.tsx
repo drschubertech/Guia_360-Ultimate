@@ -55,11 +55,8 @@ export default function AdminSubcategorias() {
 
     setLoading(true);
     
-    const slug = nome.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    
     const { error } = await supabase.from('subcategorias').insert([{
-      nome: nome, 
-      slug, 
+      nome: nome.trim(), 
       categoria_id: categoryId
     }]);
 
@@ -76,7 +73,7 @@ export default function AdminSubcategorias() {
   async function handleDelete(id: string) {
     if (!confirm('Tem certeza que deseja excluir esta subcategoria? As empresas atreladas a ela poderão ficar sem subcategoria.')) return;
     
-    const { error } = await supabase.from('subcategories').delete().eq('id', id);
+    const { error } = await supabase.from('subcategorias').delete().eq('id', id);
     if (error) {
       alert('Erro ao excluir: ' + error.message);
     } else {
@@ -172,15 +169,14 @@ export default function AdminSubcategorias() {
             <tr>
               <th style={{ padding: '16px 24px', color: '#64748b', fontWeight: 600, fontSize: '0.9rem' }}>Nome</th>
               <th style={{ padding: '16px 24px', color: '#64748b', fontWeight: 600, fontSize: '0.9rem' }}>Categoria Principal</th>
-              <th style={{ padding: '16px 24px', color: '#64748b', fontWeight: 600, fontSize: '0.9rem' }}>Slug</th>
               <th style={{ padding: '16px 24px', color: '#64748b', fontWeight: 600, fontSize: '0.9rem', textAlign: 'right' }}>Ações</th>
             </tr>
           </thead>
           <tbody>
             {fetching ? (
-              <tr><td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}><Loader2 size={24} className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
+              <tr><td colSpan={3} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}><Loader2 size={24} className="animate-spin" style={{ margin: '0 auto' }} /></td></tr>
             ) : subcategorias.length === 0 ? (
-              <tr><td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '1.05rem' }}>Nenhuma subcategoria cadastrada.</td></tr>
+              <tr><td colSpan={3} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '1.05rem' }}>Nenhuma subcategoria cadastrada.</td></tr>
             ) : subcategorias.map(sub => (
               <tr key={sub.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                 <td style={{ padding: '16px 24px', fontWeight: 600, color: '#334155' }}>{sub.nome}</td>
@@ -189,7 +185,6 @@ export default function AdminSubcategorias() {
                     {sub.categorias?.nome || 'Sem categoria'}
                   </span>
                 </td>
-                <td style={{ padding: '16px 24px', color: '#64748b' }}>{sub.slug}</td>
                 <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                   <button 
                     onClick={() => handleDelete(sub.id)} 
