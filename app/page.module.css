@@ -108,32 +108,25 @@
   background: linear-gradient(135deg, var(--primary-color) 0%, #FF522B 100%);
   color: #ffffff;
   border: none;
-  padding: 13px 26px;
-  border-radius: var(--radius-pill);
-  font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: 0.01em;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(255, 107, 74, 0.3);
-  display: inline-flex;
+  box-shadow: 0 4px 12px rgba(255, 107, 74, 0.35);
+  display: flex;
   align-items: center;
-  gap: 6px;
-  white-space: nowrap;
+  justify-content: center;
   flex-shrink: 0;
 }
 
 .searchButton:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(255, 107, 74, 0.4);
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(255, 107, 74, 0.45);
 }
 
 .searchButton:active {
-  transform: translateY(0);
-}
-
-.searchButtonText {
-  display: inline;
+  transform: scale(0.96);
 }
 
 /* Chips de Busca Rápida */
@@ -297,9 +290,8 @@
   }
 
   .searchButton {
-    padding: 10px 18px;
-    border-radius: 22px;
-    font-size: 0.9rem;
+    width: 40px;
+    height: 40px;
   }
 
   .searchTags {
@@ -350,15 +342,5 @@
 
   .categoryLabel {
     font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 400px) {
-  .searchButtonText {
-    display: none; /* Oculta a palavra "Buscar" em telas extremamente pequenas salvando espaço para o ícone */
-  }
-
-  .searchButton {
-    padding: 10px 14px;
   }
 }

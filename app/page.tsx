@@ -69,7 +69,6 @@ export default function Home() {
           
           <form onSubmit={handleSearchSubmit} className={styles.searchBox}>
             <div className={styles.searchInputWrapper}>
-              <Search className={styles.searchIcon} size={20} />
               <input
                 type="text"
                 placeholder="O que você está procurando?"
@@ -88,9 +87,8 @@ export default function Home() {
                 </button>
               )}
             </div>
-            <button type="submit" className={styles.searchButton}>
-              <Search size={18} />
-              <span className={styles.searchButtonText}>Buscar</span>
+            <button type="submit" className={styles.searchButton} aria-label="Buscar">
+              <Search size={20} />
             </button>
           </form>
 
