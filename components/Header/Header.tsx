@@ -69,8 +69,8 @@ export default function Header() {
         </div>
       </div>
 
-      <div className={styles.mainBar}>
-        <div className={`container ${styles.mainBarContainer}`}>
+      <div className={styles.mainHeader}>
+        <div className={`container ${styles.mainHeaderContainer}`}>
           <Link href="/" className={styles.logo} onClick={() => setIsMenuOpen(false)}>
             <strong>Guia 360°</strong>
             <span>Ultimate</span>
@@ -165,7 +165,7 @@ export default function Header() {
             )}
           </div>
 
-          <button className={styles.mobileToggle} onClick={toggleMenu} aria-label="Menu">
+          <button className={styles.menuButton} onClick={toggleMenu} aria-label="Menu">
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>

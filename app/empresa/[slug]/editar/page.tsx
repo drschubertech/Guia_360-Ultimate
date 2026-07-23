@@ -131,7 +131,7 @@ export default function EditarEmpresa({ params }: { params: { slug: string } }) 
         descricao,
         telefone,
         endereco,
-        horario: horarioFuncionamento,
+        horario_funcionamento: horarioFuncionamento,
         site,
         instagram,
         facebook,

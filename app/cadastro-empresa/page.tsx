@@ -156,7 +156,7 @@ export default function CadastroEmpresa() {
         avaliacao: 0,
         telefone: whatsapp,
         endereco: `${endereco.rua}, ${endereco.numero} - ${endereco.bairro}`,
-        horario: horarioFuncionamento,
+        horario_funcionamento: horarioFuncionamento,
         status: 'fechado',
         logo: finalLogoUrl,
         site,
