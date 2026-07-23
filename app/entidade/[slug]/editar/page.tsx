@@ -24,6 +24,7 @@ export default function EditarEntidade({ params }: { params: { slug: string } })
   const [instagram, setInstagram] = useState('');
   const [facebook, setFacebook] = useState('');
   const [categoria, setCategoria] = useState('');
+  const [tipo, setTipo] = useState('Entidade');
   const [fotoLogo, setFotoLogo] = useState<File | null>(null);
   const [fotoCapa, setFotoCapa] = useState<File | null>(null);
 
@@ -133,15 +134,30 @@ export default function EditarEntidade({ params }: { params: { slug: string } })
         capa: finalCapaUrl,
       };
 
-      const { error } = await supabase
-        .from('entidades')
-        .update(atualizacao)
-        .eq('id', empresa.id);
+      if (tipo === 'Empresa') {
+        const empresaData = {
+          ...empresa,
+          ...atualizacao
+        };
+        const { error: insertError } = await supabase.from('empresas').insert([empresaData]);
+        if (insertError) throw insertError;
+        
+        const { error: deleteError } = await supabase.from('entidades').delete().eq('id', empresa.id);
+        if (deleteError) throw deleteError;
 
-      if (error) throw error;
+        alert('Tipo alterado e informações atualizadas com sucesso!');
+        router.push(`/empresa/${empresa.slug}`);
+      } else {
+        const { error } = await supabase
+          .from('entidades')
+          .update(atualizacao)
+          .eq('id', empresa.id);
 
-      alert('Informações da entidade atualizadas com sucesso!');
-      router.push(`/entidade/${empresa.slug}`);
+        if (error) throw error;
+
+        alert('Informações da entidade atualizadas com sucesso!');
+        router.push(`/entidade/${empresa.slug}`);
+      }
     } catch (err: any) {
       console.error(err);
       alert('Erro ao atualizar: ' + err.message);
@@ -427,6 +443,17 @@ export default function EditarEntidade({ params }: { params: { slug: string } })
                 />
               </div>
               <div className="edit-field">
+                <label className="edit-label">Tipo do Cadastro</label>
+                <select
+                  value={tipo}
+                  onChange={e => setTipo(e.target.value)}
+                  className="edit-input"
+                >
+                  <option value="Empresa">Empresa</option>
+                  <option value="Entidade">Entidade</option>
+                </select>
+              </div>
+              <div className="edit-field">
                 <label className="edit-label">Categoria <span className="edit-label-hint">área de atuação</span></label>
                 <input
                   type="text"
@@ -434,7 +461,18 @@ export default function EditarEntidade({ params }: { params: { slug: string } })
                   onChange={e => setCategoria(e.target.value)}
                   placeholder="Ex: Assistência Social, Meio Ambiente, Educação…"
                   className="edit-input"
+                  list="categorias-list"
                 />
+                <datalist id="categorias-list">
+                  <option value="Alimentação" />
+                  <option value="Saúde" />
+                  <option value="Educação" />
+                  <option value="Serviços" />
+                  <option value="Varejo" />
+                  <option value="Associação" />
+                  <option value="Igreja" />
+                  <option value="ONG" />
+                </datalist>
               </div>
               <div className="edit-field">
                 <label className="edit-label">Descrição</label>
