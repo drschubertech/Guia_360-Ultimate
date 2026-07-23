@@ -102,6 +102,13 @@ export default function AdminEntidades() {
     if (!confirmar) return;
 
     try {
+      // Se for um dado de demonstração (id '1', '2', etc. não é UUID), a gente só remove visualmente
+      if (!id.includes('-')) {
+        alert("Entidade de demonstração excluída (apenas visualmente)!");
+        setEntidades(prev => prev.filter(e => e.id !== id));
+        return;
+      }
+
       const { error } = await supabase.from('entidades').delete().eq('id', id);
       if (error) throw error;
       
