@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import AdminHeader from '@/components/AdminHeader';
-import { Loader2, Landmark, CheckCircle2 } from 'lucide-react';
+import { Loader2, Landmark, CheckCircle2, Edit, Trash2 } from 'lucide-react';
 
 export default function AdminEntidades() {
   const [entidades, setEntidades] = useState<any[]>([]);
@@ -96,6 +97,22 @@ export default function AdminEntidades() {
     }
   }
 
+  async function handleDelete(id: string) {
+    const confirmar = window.confirm("Tem certeza que deseja excluir esta entidade?");
+    if (!confirmar) return;
+
+    try {
+      const { error } = await supabase.from('entidades').delete().eq('id', id);
+      if (error) throw error;
+      
+      alert("Entidade excluída com sucesso!");
+      setEntidades(prev => prev.filter(e => e.id !== id));
+    } catch (err: any) {
+      console.error('Erro ao excluir entidade:', err);
+      alert("Erro ao excluir entidade: " + err.message);
+    }
+  }
+
   return (
     <div className="adm-page">
       <style>{`
@@ -140,6 +157,12 @@ export default function AdminEntidades() {
           font-weight: 500;
         }
 
+        .action-buttons {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
         .btn-verificar {
           background-color: #B91C1C;
           color: #FFFFFF;
@@ -154,6 +177,34 @@ export default function AdminEntidades() {
 
         .btn-verificar:hover {
           background-color: #991B1B;
+        }
+
+        .btn-action {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 6px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 0.2s;
+        }
+        
+        .btn-edit {
+          color: #2563EB;
+        }
+        
+        .btn-edit:hover { 
+          background-color: #DBEAFE; 
+        }
+
+        .btn-delete {
+          color: #EF4444;
+        }
+        
+        .btn-delete:hover { 
+          background-color: #FEE2E2; 
         }
 
         .empty-state {
@@ -209,15 +260,33 @@ export default function AdminEntidades() {
                     </div>
                   </td>
                   <td>
-                    {!ent.verificada && (
-                      <button
-                        className="btn-verificar"
-                        onClick={() => handleVerificar(ent.id)}
-                        disabled={processingId === ent.id}
+                    <div className="action-buttons">
+                      {!ent.verificada && (
+                        <button
+                          className="btn-verificar"
+                          onClick={() => handleVerificar(ent.id)}
+                          disabled={processingId === ent.id}
+                        >
+                          {processingId === ent.id ? <Loader2 className="animate-spin" size={12} /> : 'Verificar'}
+                        </button>
+                      )}
+
+                      {ent.slug && (
+                        <Link href={`/entidade/${ent.slug}/editar`}>
+                          <button className="btn-action btn-edit" title="Editar">
+                            <Edit size={18} />
+                          </button>
+                        </Link>
+                      )}
+
+                      <button 
+                        className="btn-action btn-delete" 
+                        onClick={() => handleDelete(ent.id)}
+                        title="Excluir"
                       >
-                        {processingId === ent.id ? <Loader2 className="animate-spin" size={12} /> : 'Verificar'}
+                        <Trash2 size={18} />
                       </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
