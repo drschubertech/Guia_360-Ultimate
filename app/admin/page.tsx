@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  MessageSquare
+  MessageSquare,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -26,6 +27,7 @@ export default function AdminDashboard() {
     entidades: 0,
     eventos: 0,
     usuarios: 0,
+    claimsPendentes: 0,
   });
 
   const [loading, setLoading] = useState(true);
@@ -46,7 +48,7 @@ export default function AdminDashboard() {
         { count: usersCount },
         { count: eventsCount },
         { data: pendingNews },
-        { data: pendingClaims },
+        { count: claimsCount },
         { data: msgsData }
       ] = await Promise.all([
         supabase.from('empresas').select('*', { count: 'exact', head: true }),
@@ -55,11 +57,12 @@ export default function AdminDashboard() {
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('eventos').select('*', { count: 'exact', head: true }),
         supabase.from('noticias').select('id').eq('status', 'pending'),
-        supabase.from('company_claims').select('id').eq('status', 'pending'),
+        supabase.from('claims').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('contact_messages').select('*').order('created_at', { ascending: false }).limit(5)
       ]);
 
-      const pendentesCount = (pendingNews?.length || 0) + (pendingClaims?.length || 0);
+      const pendentesCount = (pendingNews?.length || 0);
+      const claimsPendentesCount = claimsCount || 0;
 
       setStats({
         empresas: empCount || 13,
@@ -68,6 +71,7 @@ export default function AdminDashboard() {
         entidades: entCount || 8,
         eventos: eventsCount || 2,
         usuarios: usersCount || 10,
+        claimsPendentes: claimsPendentesCount,
       });
 
       if (msgsData) setRecentMessages(msgsData);
@@ -121,6 +125,13 @@ export default function AdminDashboard() {
       value: stats.usuarios,
       label: 'USUÁRIOS',
       link: '/admin/usuarios'
+    },
+    {
+      id: 'claims',
+      icon: <ShieldCheck size={22} className="stat-card-icon" />,
+      value: stats.claimsPendentes,
+      label: 'REIVINDICAÇÕES PENDENTES',
+      link: '/admin/claims'
     },
   ];
 

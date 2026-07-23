@@ -1,5 +1,5 @@
 import styles from './PostCard.module.css';
-import { Noticia } from '../../lib/data';
+import { Noticia } from '../../lib/types';
 import { Calendar, User } from 'lucide-react';
 
 export default function PostCard({ noticia }: { noticia: Noticia }) {

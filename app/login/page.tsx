@@ -67,13 +67,12 @@ export default function Login() {
       }
 
       // Checar se o usuário é proprietário ou membro de empresas / entidades
-      const [{ data: empData }, { data: entData }, { data: memData }] = await Promise.all([
+      const [{ data: empData }, { data: entData }] = await Promise.all([
         supabase.from('empresas').select('id').eq('user_id', userId).limit(1),
         supabase.from('entidades').select('id').eq('user_id', userId).limit(1),
-        supabase.from('entity_members').select('id').eq('user_id', userId).limit(1),
       ]);
 
-      const isEmpresaUser = roleName === 'company' || roleName === 'empresa' || Boolean(empData?.length || entData?.length || memData?.length);
+      const isEmpresaUser = roleName === 'company' || roleName === 'empresa' || Boolean(empData?.length || entData?.length);
 
       // Redirecionamento inteligente baseado no perfil e na aba selecionada
       if (activeTab === 'cidadao' && isEmpresaUser) {

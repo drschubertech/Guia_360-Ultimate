@@ -13,7 +13,8 @@ import {
   MapPin, 
   LogOut, 
   Menu, 
-  X 
+  X,
+  ShieldCheck
 } from 'lucide-react';
 import AdminGuard from '@/components/AdminGuard';
 import { supabase } from '@/lib/supabase';
@@ -68,6 +69,7 @@ export default function AdminLayout({
     { label: 'Usuários', path: '/admin/usuarios', icon: <Users size={18} /> },
     { label: 'Categorias', path: '/admin/categorias', icon: <Tags size={18} /> },
     { label: 'Cidades', path: '/admin/cidades', icon: <MapPin size={18} /> },
+    { label: 'Reivindicações', path: '/admin/claims', icon: <ShieldCheck size={18} /> },
   ];
 
   return (

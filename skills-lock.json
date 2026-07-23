@@ -1,24 +1,11 @@
 {
   "version": 1,
   "skills": {
-    "frontend-design": {
-      "source": "anthropics/skills",
-      "ref": "main",
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
       "sourceType": "github",
-      "skillPath": "skills/frontend-design/SKILL.md",
-      "computedHash": "93f53fd1c0352d3d7ec17b8f73d7351bf76f4821e55d123c9d2abc2c53ba48e4"
-    },
-    "refactoring-expert": {
-      "source": "cin12211/orca-q",
-      "sourceType": "github",
-      "skillPath": ".claude/skills/refactoring-expert/SKILL.md",
-      "computedHash": "c99bc2007a0407905f46f8956b3b6e177a14f86f50266da120013cb49194529c"
-    },
-    "tailwindcss-mobile-first": {
-      "source": "josiahsiegel/claude-plugin-marketplace",
-      "sourceType": "github",
-      "skillPath": "plugins/tailwindcss-master/skills/tailwindcss-mobile-first/SKILL.md",
-      "computedHash": "b57cdd86a0bc0bfb35e5e42e6adf79c5fece774cea7340f1d992ff6e93cdc002"
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "768f9a7532780a72165f79c91d71a4bf82abd9ed31045238c2acb40322fc1d0a"
     }
   }
 }

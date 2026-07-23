@@ -36,11 +36,11 @@ export default function AdminUsuarios() {
     if (!confirmar) return;
 
     try {
-      // Deleta o perfil (se houver gatilho de cascade, apagará o auth.users também, ou vice-versa, dependendo da configuração do banco)
-      const { error } = await supabase.from('profiles').delete().eq('id', id);
+      const { deleteUserAction } = await import('@/app/actions/admin');
+      const result = await deleteUserAction(id);
       
-      if (error) {
-        throw error;
+      if (!result.success) {
+        throw new Error(result.error);
       }
       
       alert("Usuário deletado com sucesso!");
@@ -48,9 +48,10 @@ export default function AdminUsuarios() {
       setUsuarios(usuarios.filter(u => u.id !== id));
     } catch (err: any) {
       console.error('Erro ao deletar usuário:', err);
-      alert("Erro ao deletar usuário: " + err.message);
+      alert("Erro ao deletar usuário: " + err.message + "\n\n(Dica: Certifique-se de configurar SUPABASE_SERVICE_ROLE_KEY no arquivo .env.local)");
     }
   };
+
 
   return (
     <div className="adm-page">

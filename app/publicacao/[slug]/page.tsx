@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { noticiasMock } from '@/lib/data';
+
 import { supabase } from '@/lib/supabase';
 import PostCard from '@/components/PostCard/PostCard';
 import { 
@@ -60,26 +60,10 @@ export default function PublicacaoPage() {
           data = dataById;
         }
 
-        // 3. Se não encontrar na tabela 'noticias', tenta na tabela 'news'
-        if (!data) {
-          const { data: newsData } = await supabase
-            .from('news')
-            .select('*')
-            .eq('slug', slug)
-            .maybeSingle();
-          data = newsData;
-        }
-
         if (data) {
           setNoticia(data);
         } else {
-          // 4. Fallback para os dados mock se não estiver no banco
-          const mock = noticiasMock.find(n => n.slug === slug || n.id === slug);
-          if (mock) {
-            setNoticia(mock);
-          } else {
-            setNoticia(null);
-          }
+          setNoticia(null);
         }
 
         // Carregar outras notícias relacionadas
@@ -103,15 +87,10 @@ export default function PublicacaoPage() {
 
         if (outrNoticias && outrNoticias.length > 0) {
           setNoticiasRelacionadas(outrNoticias);
-        } else {
-          setNoticiasRelacionadas(noticiasMock.filter(n => n.slug !== slug).slice(0, 3));
         }
 
       } catch (err) {
         console.error('Erro ao carregar publicação:', err);
-        const mock = noticiasMock.find(n => n.slug === slug || n.id === slug);
-        setNoticia(mock || null);
-        setNoticiasRelacionadas(noticiasMock.filter(n => n.slug !== slug).slice(0, 3));
       } finally {
         setLoading(false);
       }

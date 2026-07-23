@@ -14,14 +14,11 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const checkAdmin = async (userId: string) => {
+  const checkAdmin = async () => {
     try {
-      const { data: profile } = await supabase.from('profiles').select('role_id').eq('id', userId).single();
-      if (profile?.role_id) {
-        const { data: role } = await supabase.from('user_roles').select('name').eq('id', profile.role_id).single();
-        if (role?.name === 'admin') setIsAdmin(true);
-        else setIsAdmin(false);
-      }
+      const { data, error } = await supabase.rpc('is_admin');
+      if (!error && data === true) setIsAdmin(true);
+      else setIsAdmin(false);
     } catch (err) {
       console.error(err);
       setIsAdmin(false);
@@ -29,22 +26,18 @@ export default function Header() {
   };
 
   useEffect(() => {
-    // Busca a sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) checkAdmin(session.user.id);
     });
 
-    // Escuta mudanças na autenticação (login, logout)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ? { ...session.user } : null);
-      if (session?.user) checkAdmin(session.user.id);
+      if (session?.user) checkAdmin();
       else setIsAdmin(false);
     });
 
-    // Escuta atualizações de perfil manuais
     const handleUserUpdated = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ? { ...session.user } : null);
@@ -61,14 +54,12 @@ export default function Header() {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Não renderiza o Header público nas rotas administrativas
   if (pathname?.startsWith('/admin')) {
     return null;
   }
 
   return (
     <header className={styles.header}>
-      {/* Top Bar (Opcional - Conforme Diretrizes) */}
       <div className={styles.topBar}>
         <div className={`container ${styles.topBarContainer}`}>
           <span>Bem-vindo, selecione sua cidade</span>
@@ -78,85 +69,105 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Main Header */}
-      <div className={styles.mainHeader}>
-        <div className={`container ${styles.mainHeaderContainer}`}>
-          <Link href="/" className={styles.logo}>
-            <img src="/logo.png" alt="Guia 360º Logo" width={40} height={40} style={{ objectFit: 'contain', borderRadius: '8px' }} />
-            <span>GUIA LOCAL 360º</span>
+      <div className={styles.mainBar}>
+        <div className={`container ${styles.mainBarContainer}`}>
+          <Link href="/" className={styles.logo} onClick={() => setIsMenuOpen(false)}>
+            <strong>Guia 360°</strong>
+            <span>Ultimate</span>
           </Link>
-
-          <button className={styles.menuButton} onClick={toggleMenu} aria-label="Toggle menu">
-            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
-          </button>
 
           <nav className={`${styles.nav} ${isMenuOpen ? styles.navOpen : ''}`}>
             <Link href="/" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Início</Link>
             <Link href="/guia-comercial" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Guia Comercial</Link>
             <Link href="/noticias" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Notícias</Link>
-            <Link href="/guia-comercial?tipo=empresas" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Empresas</Link>
-            <Link href="/guia-comercial?tipo=entidades" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Entidades</Link>
-            
+            <Link href="/contato" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>Contato</Link>
+
             <div className={styles.mobileActions}>
               {user ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%' }}>
-                  {pathname !== '/perfil' && (
-                    <Link href="/perfil" className={styles.loginBtn} onClick={() => setIsMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px' }}>
-                      <div style={{ width: '24px', height: '24px', backgroundColor: 'var(--primary-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold', overflow: 'hidden' }}>
-                        {user.user_metadata?.avatar_url ? (
-                          <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          user.user_metadata?.nome?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || <User size={14} />
-                        )}
-                      </div>
-                      {user.user_metadata?.nome ? user.user_metadata.nome.split(' ')[0] : 'Meu Perfil'}
-                    </Link>
-                  )}
-                  
-                  {isAdmin && (
-                    <Link href="/admin" className={styles.loginBtn} onClick={() => setIsMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px' }}>
-                      <Settings size={18} /> Painel Admin
-                    </Link>
-                  )}
-                  
-                  <button onClick={async () => { await supabase.auth.signOut(); setIsMenuOpen(false); router.push('/'); }} className={styles.loginBtn} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px', color: '#ef4444', border: 'none', background: 'transparent' }}>
-                    <LogOut size={18} /> Sair
-                  </button>
-                </div>
-              ) : (
                 <>
-                  <Link href="/login" className={styles.loginBtn} onClick={() => setIsMenuOpen(false)}>Entrar</Link>
-                  <Link href="/cadastro-empresa" className="btn-theme btn-pill" onClick={() => setIsMenuOpen(false)}>
-                    ANUNCIAR GRÁTIS
+                  {isAdmin && (
+                    <Link href="/admin" className="btn-theme" onClick={() => setIsMenuOpen(false)}>
+                      <Settings size={16} /> Admin
+                    </Link>
+                  )}
+                  <Link href="/perfil" className={styles.navLink} onClick={() => setIsMenuOpen(false)}>
+                    <User size={18} /> {user.email?.split('@')[0] || 'Perfil'}
                   </Link>
+                  <button
+                    className={styles.navLink}
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      setIsMenuOpen(false);
+                      router.push('/');
+                    }}
+                    style={{ color: '#ef4444', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.9rem', fontWeight: 500, padding: '8px 0' }}>
+                    <LogOut size={16} /> Sair
+                  </button>
                 </>
+              ) : (
+                <Link href="/login" className="btn-theme" onClick={() => setIsMenuOpen(false)}>
+                  Entrar / Cadastrar
+                </Link>
               )}
             </div>
           </nav>
 
           <div className={styles.desktopActions}>
             {user ? (
-              <Link href="/perfil" className={styles.loginBtn} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 15px', backgroundColor: 'var(--bg-light)', borderRadius: 'var(--radius-pill)', border: '1px solid #eaeaea' }}>
-                <div style={{ width: '28px', height: '28px', backgroundColor: 'var(--primary-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.9rem', fontWeight: 'bold', overflow: 'hidden' }}>
-                  {user.user_metadata?.avatar_url ? (
-                    <img src={user.user_metadata.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    user.user_metadata?.nome?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || <User size={16} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isAdmin && (
+                  <Link href="/admin" className="btn-theme" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', padding: '6px 14px' }}>
+                    <Settings size={14} /> Admin
+                  </Link>
+                )}
+                <div style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '6px 12px', borderRadius: '8px',
+                      border: '1.5px solid #E6E2DA', backgroundColor: '#fff',
+                      cursor: 'pointer', color: '#1E293B', fontWeight: 600,
+                      fontSize: '0.85rem', fontFamily: 'inherit'
+                    }}>
+                    <User size={16} />
+                    {user.email?.split('@')[0] || 'Perfil'}
+                  </button>
+                  {isMenuOpen && (
+                    <div style={{
+                      position: 'absolute', top: '100%', right: 0, marginTop: '4px',
+                      backgroundColor: '#fff', borderRadius: '8px',
+                      border: '1px solid #E6E2DA', boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                      minWidth: '180px', zIndex: 100, overflow: 'hidden'
+                    }}>
+                      <Link href="/perfil" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', color: '#1E293B', fontSize: '0.85rem', textDecoration: 'none' }}
+                        onClick={() => setIsMenuOpen(false)}>
+                        <User size={15} /> Meu Perfil
+                      </Link>
+                      <button onClick={async () => {
+                        await supabase.auth.signOut();
+                        setIsMenuOpen(false);
+                        router.push('/');
+                      }} style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '10px 14px', color: '#EF4444', fontSize: '0.85rem',
+                        border: 'none', background: 'none', width: '100%',
+                        cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left'
+                      }}>
+                        <LogOut size={15} /> Sair
+                      </button>
+                    </div>
                   )}
                 </div>
-                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-                  {user.user_metadata?.nome ? user.user_metadata.nome.split(' ')[0] : user.email?.split('@')[0]}
-                </span>
-              </Link>
+              </div>
             ) : (
-              <>
-                <Link href="/login" className={styles.loginBtn}>Entrar</Link>
-                <Link href="/cadastro-empresa" className="btn-theme btn-pill">
-                  ANUNCIAR GRÁTIS
-                </Link>
-              </>
+              <Link href="/login" className="btn-theme">Entrar / Cadastrar</Link>
             )}
           </div>
+
+          <button className={styles.mobileToggle} onClick={toggleMenu} aria-label="Menu">
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </div>
     </header>

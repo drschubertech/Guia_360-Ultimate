@@ -1,5 +1,5 @@
 import styles from './CompanyCard.module.css';
-import { Empresa } from '../../lib/data';
+import { Empresa } from '../../lib/types';
 import { MapPin, Star } from 'lucide-react';
 
 export default function CompanyCard({ empresa }: { empresa: Empresa }) {

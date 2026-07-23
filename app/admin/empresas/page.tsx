@@ -16,21 +16,13 @@ export default function AdminEmpresas() {
   async function fetchEmpresas() {
     setFetching(true);
     try {
-      // 1. Tentar buscar em 'empresas'
       let { data, error } = await supabase
         .from('empresas')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error || !data || data.length === 0) {
-        // Tentar tabela 'companies'
-        const resComp = await supabase
-          .from('companies')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (resComp.data) {
-          data = resComp.data;
-        }
+      if (error) {
+        console.error('Erro ao buscar empresas:', error);
       }
 
       setEmpresas(data || []);
@@ -46,7 +38,6 @@ export default function AdminEmpresas() {
     if (!confirm('Tem certeza que deseja excluir esta empresa?')) return;
     try {
       await supabase.from('empresas').delete().eq('id', id);
-      await supabase.from('companies').delete().eq('id', id);
       fetchEmpresas();
     } catch (err: any) {
       alert('Erro ao excluir: ' + err.message);

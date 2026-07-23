@@ -17,32 +17,17 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
   const checkAdmin = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         router.push('/login');
         return;
       }
 
-      // Buscar o perfil do usuário
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role_id')
-        .eq('id', session.user.id)
-        .single();
+      const { data, error } = await supabase.rpc('is_admin');
 
-      if (!profile?.role_id) {
-        router.push('/');
-        return;
-      }
+      if (error) throw error;
 
-      // Verificar se a role é 'admin'
-      const { data: role } = await supabase
-        .from('user_roles')
-        .select('name')
-        .eq('id', profile.role_id)
-        .single();
-
-      if (role?.name === 'admin') {
+      if (data === true) {
         setIsAuthorized(true);
       } else {
         router.push('/');

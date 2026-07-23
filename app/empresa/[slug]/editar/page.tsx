@@ -51,26 +51,29 @@ export default function EditarEmpresa({ params }: { params: { slug: string } }) 
         return;
       }
 
-      // Verifica se o usuário é ADMIN
-      let isAdmin = false;
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role_id')
-        .eq('id', session.user.id)
-        .single();
+      // Verifica se o usuário pode editar (admin ou dono da claim)
+      let canEdit = false;
+      if (data.user_id === session.user.id) canEdit = true;
+      if (data.claimed_by === session.user.id) canEdit = true;
 
-      if (profile?.role_id) {
-        const { data: role } = await supabase
-          .from('user_roles')
-          .select('name')
-          .eq('id', profile.role_id)
+      if (!canEdit) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role_id')
+          .eq('id', session.user.id)
           .single();
-        if (role?.name === 'admin') {
-          isAdmin = true;
+
+        if (profile?.role_id) {
+          const { data: role } = await supabase
+            .from('user_roles')
+            .select('name')
+            .eq('id', profile.role_id)
+            .single();
+          if (role?.name === 'admin') canEdit = true;
         }
       }
 
-      if (data.user_id !== session.user.id && !isAdmin) {
+      if (!canEdit) {
         alert('Acesso negado. Você não é o administrador desta página nem do sistema.');
         router.push(`/empresa/${params.slug}`);
         return;

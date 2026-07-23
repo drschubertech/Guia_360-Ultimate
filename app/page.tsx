@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import styles from './page.module.css';
-import { noticiasMock, empresasMock, categoriasMock } from '../lib/data';
+
 import PostCard from '../components/PostCard/PostCard';
 import CompanyCard from '../components/CompanyCard/CompanyCard';
 import Link from 'next/link';
@@ -30,20 +30,15 @@ export default function Home() {
         const empresasFormatadas = (!empError && empData) ? empData.map(e => ({ ...e, tipo: 'Empresa' })) : [];
         const entidadesFormatadas = (!entError && entData) ? entData.map(e => ({ ...e, tipo: 'Entidade' })) : [];
 
-        setEmpresas([...empresasMock, ...empresasFormatadas, ...entidadesFormatadas]);
+        setEmpresas([...empresasFormatadas, ...entidadesFormatadas]);
 
         const { data: notData, error: notError } = await supabase.from('noticias').select('*').order('created_at', { ascending: false }).limit(4);
         if (!notError && notData && notData.length > 0) setNoticias(notData);
-        else setNoticias(noticiasMock);
 
         const { data: catData, error: catError } = await supabase.from('categorias').select('*').order('nome');
         if (!catError && catData && catData.length > 0) setCategorias(catData);
-        else setCategorias(categoriasMock);
       } catch (error) {
         console.error('Erro ao buscar dados:', error);
-        setEmpresas(empresasMock);
-        setNoticias(noticiasMock);
-        setCategorias(categoriasMock);
       }
     }
     carregarDados();
@@ -140,9 +135,7 @@ export default function Home() {
             <Link href="/guia-comercial" className={styles.sectionLink}>Ver todas &rarr;</Link>
           </div>
           <div className={styles.grid}>
-            {empresas.length > 0 ? empresas.map((empresa) => (
-              <CompanyCard key={empresa.id} empresa={empresa} />
-            )) : empresasMock.map((empresa) => (
+            {empresas.map((empresa) => (
               <CompanyCard key={empresa.id} empresa={empresa} />
             ))}
           </div>

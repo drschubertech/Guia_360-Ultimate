@@ -62,17 +62,7 @@ export default function AdminEntidades() {
 
         setEntidades(processed);
       } else {
-        // Fallback de demonstração
-        setEntidades([
-          { id: '1', nome: 'Associação Comercial de Piçarras', tipo: 'Associação', responsavel: 'Daniel Rubens - teste@teste.com', verificada: true },
-          { id: '2', nome: 'Clube Náutico Piçarras', tipo: 'Clube', responsavel: '— Sem responsável —', verificada: true },
-          { id: '3', nome: 'Colônia de Pescadores Z-19', tipo: 'Associação', responsavel: '— Sem responsável —', verificada: true },
-          { id: '4', nome: 'Igreja Batista Renovada — Juventude em ação', tipo: 'Outro', responsavel: 'Paulinho - ibr@teste.com', verificada: false },
-          { id: '5', nome: 'ONG Mar Limpo', tipo: 'ONG', responsavel: 'Fulano deTal - fulano@teste.com', verificada: true },
-          { id: '6', nome: 'Paróquia Nossa Senhora da Paz', tipo: 'Igreja', responsavel: '— Sem responsável —', verificada: true },
-          { id: '7', nome: 'Paróquia Santo Antonio — Pastoral da Juventude', tipo: 'Outro', responsavel: '— Sem responsável —', verificada: false },
-          { id: '8', nome: 'Prefeitura de Balneário Piçarras', tipo: 'Órgão público', responsavel: 'Daniel Rubens - danielrschubert@gmail.com', verificada: true }
-        ]);
+        setEntidades([]);
       }
     } catch (err) {
       console.error('Erro ao buscar entidades:', err);
@@ -109,14 +99,18 @@ export default function AdminEntidades() {
         return;
       }
 
-      const { error } = await supabase.from('entidades').delete().eq('id', id);
-      if (error) throw error;
+      const { deleteEntityAction } = await import('@/app/actions/admin');
+      const result = await deleteEntityAction(id);
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
       
       alert("Entidade excluída com sucesso!");
       setEntidades(prev => prev.filter(e => e.id !== id));
     } catch (err: any) {
       console.error('Erro ao excluir entidade:', err);
-      alert("Erro ao excluir entidade: " + err.message);
+      alert("Erro ao excluir entidade: " + err.message + "\n\n(Dica: Certifique-se de configurar SUPABASE_SERVICE_ROLE_KEY no arquivo .env.local)");
     }
   }
 

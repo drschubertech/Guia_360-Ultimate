@@ -1,16 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { empresasMock } from '../../../lib/data';
 import { MapPin, Star, Phone, Globe, Clock, Instagram, Facebook, Edit, CheckCircle2, ShieldCheck, ChevronRight, Loader2, HeartHandshake, Tag } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 import { useRouter } from 'next/navigation';
+import ClaimModal from '../../../components/ClaimModal/ClaimModal';
 
 export default function PerfilEntidade({ params }: { params: { slug: string } }) {
   const [empresa, setEmpresa] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
+  const [pendingClaim, setPendingClaim] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -25,15 +27,20 @@ export default function PerfilEntidade({ params }: { params: { slug: string } })
         const { data, error } = await supabase.from('entidades').select('*').eq('slug', slug).limit(1);
         if (data && data.length > 0 && !error) {
           setEmpresa(data[0]);
-        } else {
-          // Se não encontrou no banco, tenta no mock
-          const mock = empresasMock.find(e => e.slug === slug);
-          if (mock) setEmpresa(mock);
+          if (session) {
+            const { data: pendingData } = await supabase
+              .from('claims')
+              .select('id')
+              .eq('target_table', 'entidades')
+              .eq('target_id', data[0].id)
+              .eq('user_id', session.user.id)
+              .eq('status', 'pending')
+              .limit(1);
+            setPendingClaim(!!(pendingData && pendingData.length > 0));
+          }
         }
       } catch (err) {
         console.error(err);
-        const mock = empresasMock.find(e => e.slug === slug);
-        if (mock) setEmpresa(mock);
       } finally {
         setLoading(false);
       }
@@ -44,14 +51,13 @@ export default function PerfilEntidade({ params }: { params: { slug: string } })
   const handleReivindicar = async (e: React.MouseEvent) => {
     e.preventDefault();
     const { data: { session } } = await supabase.auth.getSession();
-    
     if (!session) {
       if (window.confirm('Para prosseguir com essa ação você deve ser cadastrado. Deseja se cadastrar agora?')) {
         router.push('/cadastro-cidadao');
       }
-    } else {
-      router.push(`/contato?assunto=Reivindicar Entidade: ${empresa?.nome}&company_id=${empresa?.id}&tipo=Entidade`);
+      return;
     }
+    setClaimModalOpen(true);
   };
 
   if (loading) {
@@ -525,7 +531,7 @@ export default function PerfilEntidade({ params }: { params: { slug: string } })
         <div className="ep-hero-overlay" />
 
         {/* Botão Editar se for proprietário */}
-        {userId === empresa.user_id && (
+        {(userId === empresa.user_id || userId === empresa.claimed_by) && (
           <Link href={`/entidade/${empresa.slug}/editar`} className="ep-edit-btn">
             <Edit size={16} /> Editar Página
           </Link>
@@ -545,7 +551,7 @@ export default function PerfilEntidade({ params }: { params: { slug: string } })
               </span>
             )}
 
-            {empresa.reivindicada === true && (
+            {empresa.is_claimed === true && (
               <span className="ep-badge ep-badge-verified">
                 <CheckCircle2 size={13} /> Verificada
               </span>
@@ -647,12 +653,28 @@ export default function PerfilEntidade({ params }: { params: { slug: string } })
               )}
 
               {/* Botão Reivindicar */}
-              {empresa.reivindicada !== true && (
+              {pendingClaim && (
+                <>
+                  <div className="ep-claim-divider" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', backgroundColor: '#FEF3C7', borderRadius: '8px', color: '#B45309', fontSize: '0.85rem', fontWeight: 600 }}>
+                    <ShieldCheck size={16} /> Reivindicação pendente
+                  </div>
+                </>
+              )}
+              {!pendingClaim && !empresa.is_claimed && empresa.claimed_by !== userId && (
                 <>
                   <div className="ep-claim-divider" />
                   <button onClick={handleReivindicar} className="ep-claim-btn">
-                    <ShieldCheck size={16} /> Reivindicar esta entidade
+                    <ShieldCheck size={16} /> É o responsável? Reivindique aqui
                   </button>
+                </>
+              )}
+              {empresa.claimed_by === userId && (
+                <>
+                  <div className="ep-claim-divider" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', backgroundColor: '#DCFCE7', borderRadius: '8px', color: '#15803D', fontSize: '0.85rem', fontWeight: 600 }}>
+                    <CheckCircle2 size={16} /> Você administra este perfil
+                  </div>
                 </>
               )}
             </div>
@@ -755,6 +777,14 @@ export default function PerfilEntidade({ params }: { params: { slug: string } })
 
         </div>
       </div>
+      <ClaimModal
+        isOpen={claimModalOpen}
+        onClose={() => setClaimModalOpen(false)}
+        targetTable="entidades"
+        targetId={empresa?.id}
+        targetName={empresa?.nome}
+        onSuccess={() => { setClaimModalOpen(false); setPendingClaim(true); }}
+      />
     </main>
   );
 }

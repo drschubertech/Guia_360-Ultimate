@@ -62,25 +62,6 @@ export default function AdminNoticias() {
 
         if (!resSimple.error && resSimple.data && resSimple.data.length > 0) {
           rawData = resSimple.data;
-        } else {
-          // 3. Tentar tabela 'news' (em inglês) se existir
-          const resNewsJoin = await supabase
-            .from('news')
-            .select('*, profiles(full_name)')
-            .order('created_at', { ascending: false });
-
-          if (!resNewsJoin.error && resNewsJoin.data && resNewsJoin.data.length > 0) {
-            rawData = resNewsJoin.data;
-          } else {
-            const resNewsSimple = await supabase
-              .from('news')
-              .select('*')
-              .order('created_at', { ascending: false });
-
-            if (!resNewsSimple.error && resNewsSimple.data) {
-              rawData = resNewsSimple.data;
-            }
-          }
         }
       }
 
@@ -140,9 +121,9 @@ export default function AdminNoticias() {
       alert("Sessão expirada. Faça login novamente.");
       return;
     }
-    
+
     setLoading(true);
-    
+
     const rawSlug = titulo
       .toLowerCase()
       .normalize('NFD')
@@ -166,7 +147,6 @@ export default function AdminNoticias() {
     let lastError: any = null;
 
     if (editId) {
-      // Editar Notícia Existente
       const { error: errPt } = await supabase
         .from('noticias')
         .update({
@@ -182,20 +162,8 @@ export default function AdminNoticias() {
         savedSuccessfully = true;
       } else {
         lastError = errPt;
-        // Tentar na tabela 'news'
-        const { error: errEn } = await supabase
-          .from('news')
-          .update({
-            title: payloadPt.titulo,
-            content: payloadPt.conteudo,
-            image_url: payloadPt.imagem_url
-          })
-          .eq('id', editId);
-        
-        if (!errEn) savedSuccessfully = true;
       }
     } else {
-      // Inserir Nova Notícia
       const authorKeys = ['autor_id', 'user_id', 'author_id', null];
 
       for (const key of authorKeys) {
@@ -209,7 +177,6 @@ export default function AdminNoticias() {
         }
         lastError = error;
 
-        // Tratar erro de slug duplicado
         if (error.message?.includes('duplicate key') || error.message?.includes('slug')) {
           payload.slug = `${rawSlug}-${Date.now()}`;
           const { error: errRetry } = await supabase.from('noticias').insert([payload]);
@@ -219,21 +186,10 @@ export default function AdminNoticias() {
           }
         }
       }
-
-      if (!savedSuccessfully) {
-        const payloadEn: any = {
-          title: titulo, 
-          content: conteudo,
-          image_url: payloadPt.imagem_url,
-          published_at: new Date().toISOString()
-        };
-        const { error: errNews } = await supabase.from('news').insert([payloadEn]);
-        if (!errNews) savedSuccessfully = true;
-      }
     }
 
     setLoading(false);
-    
+
     if (!savedSuccessfully && lastError) {
       alert('Erro ao salvar notícia: ' + (lastError.message || JSON.stringify(lastError)));
     } else {
@@ -265,10 +221,6 @@ export default function AdminNoticias() {
     if (!confirm('Tem certeza que deseja excluir esta notícia? Esta ação não pode ser desfeita.')) return;
     
     let { error } = await supabase.from('noticias').delete().eq('id', id);
-    if (error) {
-      const { error: errNews } = await supabase.from('news').delete().eq('id', id);
-      if (!errNews) error = null;
-    }
     
     if (error) {
       alert('Erro ao excluir notícia: ' + error.message);

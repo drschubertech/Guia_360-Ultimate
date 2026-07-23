@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { noticiasMock } from '@/lib/data';
+
 import { supabase } from '@/lib/supabase';
 import PostCard from '@/components/PostCard/PostCard';
 import { Search, Loader2, Newspaper } from 'lucide-react';
@@ -33,32 +33,11 @@ export default function NoticiasListingPage() {
           }
         }
 
-        if (error || !data || data.length === 0) {
-          let { data: newsData, error: newsErr } = await supabase
-            .from('news')
-            .select('*, profiles(full_name)')
-            .order('created_at', { ascending: false });
-          
-          if (newsErr || !newsData || newsData.length === 0) {
-            const resNewsSimple = await supabase
-              .from('news')
-              .select('*')
-              .order('created_at', { ascending: false });
-            if (!resNewsSimple.error && resNewsSimple.data) {
-              newsData = resNewsSimple.data;
-            }
-          }
-          if (newsData && newsData.length > 0) data = newsData;
-        }
-
         if (data && data.length > 0) {
           setNoticias(data);
-        } else {
-          setNoticias(noticiasMock);
         }
       } catch (err) {
         console.error('Erro ao buscar notícias:', err);
-        setNoticias(noticiasMock);
       } finally {
         setLoading(false);
       }

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { empresasMock, categoriasMock, Empresa } from '../../lib/data';
+import { Empresa } from '../../lib/types';
 import CompanyCard from '../../components/CompanyCard/CompanyCard';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
@@ -14,6 +14,7 @@ function GuiaComercialContent() {
   const tipoFiltro = searchParams.get('tipo'); // 'empresas' ou 'entidades'
   
   const [empresas, setEmpresas] = useState<any[]>([]);
+  const [categorias, setCategorias] = useState<any[]>([]);
   const [busca, setBusca] = useState('');
   const [somenteAbertos, setSomenteAbertos] = useState(false);
 
@@ -29,10 +30,12 @@ function GuiaComercialContent() {
         const empresasFormatadas = (empData || []).map(e => ({ ...e, tipo: 'Empresa' }));
         const entidadesFormatadas = (entData || []).map(e => ({ ...e, tipo: 'Entidade' }));
         
-        setEmpresas([...empresasMock, ...empresasFormatadas, ...entidadesFormatadas]);
+        setEmpresas([...empresasFormatadas, ...entidadesFormatadas]);
+
+        const { data: catData, error: catError } = await supabase.from('categorias').select('*').order('nome');
+        if (!catError && catData && catData.length > 0) setCategorias(catData);
       } catch (error) {
         console.error('Erro ao buscar empresas:', error);
-        setEmpresas(empresasMock);
       }
     }
     carregarEmpresas();
@@ -604,7 +607,7 @@ function GuiaComercialContent() {
                   <ChevronRight size={14} className="guia-cat-arrow" />
                 </Link>
               </li>
-              {categoriasMock.map(cat => (
+              {categorias.map(cat => (
                 <li key={cat.id} className="guia-cat-item">
                   <Link 
                     href={`/guia-comercial?categoria=${cat.slug}${tipoFiltro ? `&tipo=${tipoFiltro}` : ''}`} 
