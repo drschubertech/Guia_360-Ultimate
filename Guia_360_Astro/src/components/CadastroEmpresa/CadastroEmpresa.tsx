@@ -217,10 +217,18 @@ export default function CadastroEmpresa() {
 
           {etapa === 3 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <h3>Etapa 3: Horário e Galeria</h3>
+              <h3>Etapa 3: Galeria</h3>
               <p style={{ color: 'var(--text-secondary)' }}>Faça upload da logo e fotos do seu negócio (Mock)</p>
               <div style={{ border: '2px dashed #ccc', padding: '30px', textAlign: 'center', borderRadius: 'var(--radius-sm)' }}>
                 Arraste imagens aqui
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Observações sobre a empresa <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>(opcional)</span></label>
+                <textarea
+                  placeholder="Informações adicionais sobre a empresa..."
+                  rows={4}
+                  style={{ width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: 'var(--radius-sm)', resize: 'vertical', fontFamily: 'inherit' }}
+                />
               </div>
             </div>
           )}

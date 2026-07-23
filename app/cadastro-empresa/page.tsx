@@ -32,7 +32,7 @@ export default function CadastroEmpresa() {
   }, []);
 
   const [whatsapp, setWhatsapp] = useState('');
-  const [horarioFuncionamento, setHorarioFuncionamento] = useState('');
+  const [observacoes, setObservacoes] = useState('');
   const [cep, setCep] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [endereco, setEndereco] = useState({
@@ -156,7 +156,7 @@ export default function CadastroEmpresa() {
         avaliacao: 0,
         telefone: whatsapp,
         endereco: `${endereco.rua}, ${endereco.numero} - ${endereco.bairro}`,
-        horario_funcionamento: horarioFuncionamento,
+        observacoes: observacoes,
         status: 'fechado',
         logo: finalLogoUrl,
         site,
@@ -892,15 +892,15 @@ export default function CadastroEmpresa() {
                 </div>
               </div>
 
-              {/* Horário de Atendimento */}
+              {/* Observações */}
               <div className="emp-form-group">
                 <label className="emp-label">
-                  Horário de Atendimento / Funcionamento
+                  Observações sobre a empresa <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, fontSize: '0.85rem' }}>(opcional)</span>
                 </label>
                 <textarea
-                  value={horarioFuncionamento}
-                  onChange={(e) => setHorarioFuncionamento(e.target.value)}
-                  placeholder="Ex: Segunda a Sexta: 08:00 às 18:00&#10;Sábado: 08:00 às 12:00"
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  placeholder="Informações adicionais sobre a empresa..."
                   className="emp-input"
                   rows={3}
                   style={{ resize: 'vertical' }}
