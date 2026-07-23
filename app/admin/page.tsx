@@ -65,12 +65,12 @@ export default function AdminDashboard() {
       const claimsPendentesCount = claimsCount || 0;
 
       setStats({
-        empresas: empCount || 13,
-        publicacoes: pubCount || 11,
-        pendentes: pendentesCount || 0,
-        entidades: entCount || 8,
-        eventos: eventsCount || 2,
-        usuarios: usersCount || 10,
+        empresas: empCount ?? 0,
+        publicacoes: pubCount ?? 0,
+        pendentes: pendentesCount ?? 0,
+        entidades: entCount ?? 0,
+        eventos: eventsCount ?? 0,
+        usuarios: usersCount ?? 0,
         claimsPendentes: claimsPendentesCount,
       });
 
